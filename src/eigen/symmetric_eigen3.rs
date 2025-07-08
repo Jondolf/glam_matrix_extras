@@ -20,7 +20,7 @@ pub struct SymmetricEigen3 {
     /// These should be in ascending order `eigen1 <= eigen2 <= eigen3`.
     pub eigenvalues: Vec3,
     /// The three eigenvectors of the [`SymmetricMat3`].
-    /// Each eigenvector should be unit length and orthogonal to the other eigenvectors.
+    /// They should be unit length and orthogonal to the other eigenvectors.
     ///
     /// The eigenvectors are ordered to correspond to the eigenvalues. For example,
     /// `eigenvectors.x_axis` corresponds to `eigenvalues.x`.
