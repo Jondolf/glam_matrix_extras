@@ -1,6 +1,7 @@
 //! Matrix types and utilities for [`glam`].
 
 #![warn(missing_docs)]
+#![no_std]
 
 mod ops;
 

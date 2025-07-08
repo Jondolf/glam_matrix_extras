@@ -25,7 +25,7 @@
     dead_code,
     reason = "This module implements all necessary floating-point operations, even if they are not yet used, for future compatibility."
 )]
-#![expect(
+#![allow(
     clippy::disallowed_methods,
     reason = "Many of the disallowed methods are disallowed to force code to use the feature-conditional re-exports from this module, but this module itself is exempt from that rule."
 )]
@@ -658,7 +658,7 @@ impl FloatAbs for f32 {
     #[inline]
     #[cfg(all(any(feature = "libm", feature = "nostd-libm"), not(feature = "std")))]
     fn abs(self) -> Self {
-        libm::absf(self)
+        libm::fabsf(self)
     }
 
     #[inline]
@@ -672,7 +672,7 @@ impl FloatAbs for f64 {
     #[inline]
     #[cfg(all(any(feature = "libm", feature = "nostd-libm"), not(feature = "std")))]
     fn abs(self) -> Self {
-        libm::abs(self)
+        libm::fabs(self)
     }
 
     #[inline]
