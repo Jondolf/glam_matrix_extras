@@ -21,7 +21,7 @@ f32 = []
 f64 = []
 
 # Enable reflection using `bevy_reflect`.
-bevy_reflect = ["dep:bevy_reflect"]
+bevy_reflect = ["dep:bevy_reflect", "bevy_reflect/glam"]
 
 # Enable data serialization/deserialization using `serde`.
 serialize = ["dep:serde", "glam/serde"]
@@ -39,8 +39,8 @@ bevy_reflect = { version = "0.16", optional = true }
 serde = { version = "1.0", optional = true, features = ["serde_derive"] }
 
 [dev-dependencies]
-# Enable `approx` for testing.
-glam_mat_extensions = { path = "./", features = ["approx"] }
+# Enable some features for testing.
+glam_mat_extensions = { path = "./", features = ["f32", "f64", "approx"] }
 
 [lints.clippy]
 alloc_instead_of_core = "warn"

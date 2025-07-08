@@ -5,7 +5,7 @@ use glam::{DMat2, DVec2};
 use glam::{Mat2, Vec2};
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{Deserialize, Reflect, Serialize};
+use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 use crate::{MatConversionError, SquareMatExt};
 
@@ -59,7 +59,10 @@ macro_rules! symmetric_mat2s {
         #[derive(Clone, Copy, PartialEq)]
         #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
         #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-        #[cfg_attr(all(feature = "bevy_reflect", feature = "serialize"), reflect(Serialize, Deserialize))]
+        #[cfg_attr(
+            all(feature = "bevy_reflect", feature = "serialize"),
+            reflect(Debug, Default, PartialEq, Serialize, Deserialize)
+        )]
         pub struct $n {
             /// The first element of the first column.
             pub m00: $t,

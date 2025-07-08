@@ -8,12 +8,16 @@ use glam::{Mat2, Mat3, Mat3A, Mat4, Vec2, Vec3, Vec3A, Vec4};
 
 /// An extension trait for matrices.
 pub trait SquareMatExt {
-    /// The type of the diagonal of the matrix.
-    type Diagonal;
+    /// The vector type associated with the matrix.
+    type Vector;
+
+    /// Creates a new matrix from the outer product `a * b^T`.
+    #[must_use]
+    fn from_outer_product(a: Self::Vector, b: Self::Vector) -> Self;
 
     /// Returns the diagonal of the matrix.
     #[must_use]
-    fn diagonal(&self) -> Self::Diagonal;
+    fn diagonal(&self) -> Self::Vector;
 
     /// Returns the inverse of the matrix, or zero if the matrix is singular.
     #[must_use]
@@ -25,7 +29,12 @@ pub trait SquareMatExt {
 }
 
 impl SquareMatExt for Mat2 {
-    type Diagonal = Vec2;
+    type Vector = Vec2;
+
+    #[inline]
+    fn from_outer_product(a: Vec2, b: Vec2) -> Self {
+        Mat2::from_cols(a * b.x, a * b.y)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -38,7 +47,7 @@ impl SquareMatExt for Mat2 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> Vec2 {
         Vec2::new(self.x_axis.x, self.y_axis.y)
     }
 
@@ -50,7 +59,12 @@ impl SquareMatExt for Mat2 {
 
 #[cfg(feature = "f64")]
 impl SquareMatExt for DMat2 {
-    type Diagonal = DVec2;
+    type Vector = DVec2;
+
+    #[inline]
+    fn from_outer_product(a: DVec2, b: DVec2) -> Self {
+        DMat2::from_cols(a * b.x, a * b.y)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -63,7 +77,7 @@ impl SquareMatExt for DMat2 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> DVec2 {
         DVec2::new(self.x_axis.x, self.y_axis.y)
     }
 
@@ -74,7 +88,12 @@ impl SquareMatExt for DMat2 {
 }
 
 impl SquareMatExt for Mat3 {
-    type Diagonal = Vec3;
+    type Vector = Vec3;
+
+    #[inline]
+    fn from_outer_product(a: Vec3, b: Vec3) -> Self {
+        Mat3::from_cols(a * b.x, a * b.y, a * b.z)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -91,7 +110,7 @@ impl SquareMatExt for Mat3 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> Vec3 {
         Vec3::new(self.x_axis.x, self.y_axis.y, self.z_axis.z)
     }
 
@@ -105,7 +124,12 @@ impl SquareMatExt for Mat3 {
 
 #[cfg(feature = "f64")]
 impl SquareMatExt for DMat3 {
-    type Diagonal = DVec3;
+    type Vector = DVec3;
+
+    #[inline]
+    fn from_outer_product(a: DVec3, b: DVec3) -> Self {
+        DMat3::from_cols(a * b.x, a * b.y, a * b.z)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -122,7 +146,7 @@ impl SquareMatExt for DMat3 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> DVec3 {
         DVec3::new(self.x_axis.x, self.y_axis.y, self.z_axis.z)
     }
 
@@ -135,7 +159,12 @@ impl SquareMatExt for DMat3 {
 }
 
 impl SquareMatExt for Mat3A {
-    type Diagonal = Vec3A;
+    type Vector = Vec3A;
+
+    #[inline]
+    fn from_outer_product(a: Vec3A, b: Vec3A) -> Self {
+        Mat3A::from_cols(a * b.x, a * b.y, a * b.z)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -152,7 +181,7 @@ impl SquareMatExt for Mat3A {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> Vec3A {
         Vec3A::new(self.x_axis.x, self.y_axis.y, self.z_axis.z)
     }
 
@@ -165,7 +194,12 @@ impl SquareMatExt for Mat3A {
 }
 
 impl SquareMatExt for Mat4 {
-    type Diagonal = Vec4;
+    type Vector = Vec4;
+
+    #[inline]
+    fn from_outer_product(a: Vec4, b: Vec4) -> Self {
+        Mat4::from_cols(a * b.x, a * b.y, a * b.z, a * b.w)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -188,14 +222,19 @@ impl SquareMatExt for Mat4 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> Vec4 {
         Vec4::new(self.x_axis.x, self.y_axis.y, self.z_axis.z, self.w_axis.w)
     }
 }
 
 #[cfg(feature = "f64")]
 impl SquareMatExt for DMat4 {
-    type Diagonal = DVec4;
+    type Vector = DVec4;
+
+    #[inline]
+    fn from_outer_product(a: DVec4, b: DVec4) -> Self {
+        DMat4::from_cols(a * b.x, a * b.y, a * b.z, a * b.w)
+    }
 
     #[inline]
     fn inverse_or_zero(&self) -> Self {
@@ -218,7 +257,7 @@ impl SquareMatExt for DMat4 {
     }
 
     #[inline]
-    fn diagonal(&self) -> Self::Diagonal {
+    fn diagonal(&self) -> DVec4 {
         DVec4::new(self.x_axis.x, self.y_axis.y, self.z_axis.z, self.w_axis.w)
     }
 }

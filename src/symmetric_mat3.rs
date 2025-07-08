@@ -4,6 +4,9 @@ use core::ops::*;
 use glam::{DMat3, DVec3};
 use glam::{Mat3, Vec3, Vec3A};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
+
 use crate::{MatConversionError, SquareMatExt};
 
 /// An extension trait for 3x3 matrices.
@@ -56,7 +59,10 @@ macro_rules! symmetric_mat3s {
         #[derive(Clone, Copy, PartialEq)]
         #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
         #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-        #[cfg_attr(all(feature = "bevy_reflect", feature = "serialize"), reflect(Serialize, Deserialize))]
+        #[cfg_attr(
+            all(feature = "bevy_reflect", feature = "serialize"),
+            reflect(Debug, Default, PartialEq, Serialize, Deserialize)
+        )]
         pub struct $n {
             /// The first element of the first column.
             pub m00: $t,
@@ -1244,6 +1250,7 @@ macro_rules! symmetric_mat3s {
     }
 }
 
+#[cfg(feature = "f32")]
 impl SymmetricMat3 {
     /// Transforms a [`Vec3A`].
     #[inline]
@@ -1253,6 +1260,7 @@ impl SymmetricMat3 {
     }
 }
 
+#[cfg(feature = "f32")]
 impl Mul<Vec3A> for SymmetricMat3 {
     type Output = Vec3A;
     #[inline]

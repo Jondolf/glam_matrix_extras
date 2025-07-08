@@ -5,6 +5,7 @@
 mod mat_ext;
 mod symmetric_mat2;
 mod symmetric_mat3;
+mod symmetric_mat6;
 
 pub use mat_ext::SquareMatExt;
 #[cfg(feature = "f64")]
@@ -17,6 +18,10 @@ pub use symmetric_mat3::DSymmetricMat3;
 pub use symmetric_mat3::Mat3Ext;
 #[cfg(feature = "f32")]
 pub use symmetric_mat3::SymmetricMat3;
+#[cfg(feature = "f64")]
+pub use symmetric_mat6::DSymmetricMat6;
+#[cfg(feature = "f32")]
+pub use symmetric_mat6::SymmetricMat6;
 
 /// An error that can occur when converting matrices to other representations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
