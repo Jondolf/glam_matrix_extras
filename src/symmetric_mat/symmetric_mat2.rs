@@ -235,6 +235,13 @@ macro_rules! symmetric_mat2s {
                 }
             }
 
+            /// Returns the diagonal of the matrix.
+            #[inline]
+            #[must_use]
+            pub fn diagonal(&self) -> $vt {
+                $vt::new(self.m00, self.m11)
+            }
+
             /// Returns `true` if, and only if, all elements are finite.
             /// If any element is either `NaN` or positive or negative infinity, this will return `false`.
             #[inline]
@@ -273,6 +280,23 @@ macro_rules! symmetric_mat2s {
                     m00: self.m11 * inv_det,
                     m01: -self.m01 * inv_det,
                     m11: self.m00 * inv_det,
+                }
+            }
+
+            /// Returns the inverse of `self`, or a zero matrix if the matrix is not invertible.
+            #[inline]
+            #[must_use]
+            pub fn inverse_or_zero(&self) -> Self {
+                let det = self.determinant();
+                if det == 0.0 {
+                    Self::ZERO
+                } else {
+                    let inv_det = 1.0 / det;
+                    Self {
+                        m00: self.m11 * inv_det,
+                        m01: -self.m01 * inv_det,
+                        m11: self.m00 * inv_det,
+                    }
                 }
             }
 

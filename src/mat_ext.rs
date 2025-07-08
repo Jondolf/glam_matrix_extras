@@ -19,7 +19,7 @@ pub trait SquareMatExt {
     #[must_use]
     fn diagonal(&self) -> Self::Vector;
 
-    /// Returns the inverse of the matrix, or zero if the matrix is singular.
+    /// Returns the inverse of `self`, or a zero matrix if the matrix is not invertible.
     #[must_use]
     fn inverse_or_zero(&self) -> Self;
 
