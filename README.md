@@ -11,7 +11,7 @@ Matrix types and utilities for [`glam`].
   - [ ] 2x3 matrices: `Mat23`, `DMat23`
 - Symmetric matrices
   - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `DSymmetricMat2`
-  - [ ] Symmetric 3x3 matrices: `SymmetricMat3`, `DSymmetricMat3`
+  - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `DSymmetricMat3`
   - [ ] Symmetric 4x4 matrices: `SymmetricMat4`, `DSymmetricMat4`
   - [ ] Symmetric 5x5 matrices: `SymmetricMat5`, `DSymmetricMat5`
   - [ ] Symmetric 6x6 matrices: `SymmetricMat6`, `DSymmetricMat6`

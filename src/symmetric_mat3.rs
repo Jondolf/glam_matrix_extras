@@ -1,49 +1,46 @@
 use core::iter::Sum;
 use core::ops::*;
 #[cfg(feature = "f64")]
-use glam::{DMat2, DVec2};
-use glam::{Mat2, Vec2};
-
-#[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{Deserialize, Reflect, Serialize};
+use glam::{DMat3, DVec3};
+use glam::{Mat3, Vec3, Vec3A};
 
 use crate::{MatConversionError, SquareMatExt};
 
-/// An extension trait for 2x2 matrices.
-pub trait Mat2Ext {
-    /// The type of the symmetric 2x2 matrix.
-    type SymmetricMat2;
+/// An extension trait for 3x3 matrices.
+pub trait Mat3Ext {
+    /// The type of the symmetric 3x3 matrix.
+    type SymmetricMat3;
 
-    /// Multiplies `self` by a symmetric 2x2 matrix.
-    fn mul_symmetric_mat2(&self, rhs: &Self::SymmetricMat2) -> Self;
+    /// Multiplies `self` by a symmetric 3x3 matrix.
+    fn mul_symmetric_mat3(&self, rhs: &Self::SymmetricMat3) -> Self;
 }
 
 #[cfg(feature = "f32")]
-impl Mat2Ext for Mat2 {
-    type SymmetricMat2 = SymmetricMat2;
+impl Mat3Ext for Mat3 {
+    type SymmetricMat3 = SymmetricMat3;
 
     #[inline]
-    fn mul_symmetric_mat2(&self, rhs: &SymmetricMat2) -> Mat2 {
+    fn mul_symmetric_mat3(&self, rhs: &SymmetricMat3) -> Mat3 {
         self.mul(rhs)
     }
 }
 
 #[cfg(feature = "f64")]
-impl Mat2Ext for DMat2 {
-    type SymmetricMat2 = DSymmetricMat2;
+impl Mat3Ext for DMat3 {
+    type SymmetricMat3 = DSymmetricMat3;
 
     #[inline]
-    fn mul_symmetric_mat2(&self, rhs: &DSymmetricMat2) -> DMat2 {
+    fn mul_symmetric_mat3(&self, rhs: &DSymmetricMat3) -> DMat3 {
         self.mul(rhs)
     }
 }
 
-macro_rules! symmetric_mat2s {
-    ($($n:ident => $nonsymmetricn:ident, $vt:ident, $t:ident),+) => {
+macro_rules! symmetric_mat3s {
+    ($($n:ident => $nonsymmetricn:ident, $v2t:ident, $vt:ident, $t:ident),+) => {
         $(
-        /// The bottom left triangle (including the diagonal) of a symmetric 2x2 column-major matrix.
+        /// The bottom left triangle (including the diagonal) of a symmetric 3x3 column-major matrix.
         ///
-        /// This is useful for storing a symmetric 2x2 matrix in a more compact form and performing some
+        /// This is useful for storing a symmetric 3x3 matrix in a more compact form and performing some
         /// matrix operations more efficiently.
         ///
         /// Some defining properties of symmetric matrices include:
@@ -65,22 +62,35 @@ macro_rules! symmetric_mat2s {
             pub m00: $t,
             /// The second element of the first column.
             pub m01: $t,
+            /// The third element of the first column.
+            pub m02: $t,
             /// The second element of the second column.
             pub m11: $t,
+            /// The third element of the second column.
+            pub m12: $t,
+            /// The third element of the third column.
+            pub m22: $t,
         }
 
         impl $n {
-            /// A symmetric 2x2 matrix with all elements set to `0.0`.
-            pub const ZERO: Self = Self::new(0.0, 0.0, 0.0);
+            /// A symmetric 3x3 matrix with all elements set to `0.0`.
+            pub const ZERO: Self = Self::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-            /// A symmetric 2x2 identity matrix, where all diagonal elements are `1.0`,
+            /// A symmetric 3x3 identity matrix, where all diagonal elements are `1.0`,
             /// and all off-diagonal elements are `0.0`.
-            pub const IDENTITY: Self = Self::new(1.0, 0.0, 1.0);
+            pub const IDENTITY: Self = Self::new(1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
 
             /// All NaNs.
-            pub const NAN: Self = Self::new($t::NAN, $t::NAN, $t::NAN);
+            pub const NAN: Self = Self::new(
+                $t::NAN,
+                $t::NAN,
+                $t::NAN,
+                $t::NAN,
+                $t::NAN,
+                $t::NAN,
+            );
 
-            /// Creates a new symmetric 2x2 matrix from its bottom left triangle, including diagonal elements.
+            /// Creates a new symmetric 3x3 matrix from its bottom left triangle, including diagonal elements.
             ///
             /// The elements are in column-major order `mCR`, where `C` is the column index
             /// and `R` is the row index.
@@ -89,130 +99,169 @@ macro_rules! symmetric_mat2s {
             pub const fn new(
                 m00: $t,
                 m01: $t,
+                m02: $t,
                 m11: $t,
+                m12: $t,
+                m22: $t,
             ) -> Self {
-                Self { m00, m01, m11 }
+                Self {
+                    m00,
+                    m01,
+                    m02,
+                    m11,
+                    m12,
+                    m22,
+                }
             }
 
-            /// Creates a symmetric 2x2 matrix from three column vectors.
+            /// Creates a symmetric 3x3 matrix from three column vectors.
             ///
             /// Only the lower left triangle of the matrix is used. No check is performed to ensure
             /// that the given columns truly produce a symmetric matrix.
             #[inline(always)]
             #[must_use]
-            pub const fn from_cols_unchecked(x_axis: $vt, y_axis: $vt) -> Self {
+            pub const fn from_cols_unchecked(x_axis: $vt, y_axis: $vt, z_axis: $vt) -> Self {
                 Self {
                     m00: x_axis.x,
                     m01: x_axis.y,
+                    m02: x_axis.z,
                     m11: y_axis.y,
+                    m12: y_axis.z,
+                    m22: z_axis.z,
                 }
             }
 
-            /// Creates a symmetric 2x2 matrix from an array stored in column major order.
+            /// Creates a symmetric 3x3 matrix from an array stored in column major order.
             ///
             /// Only the lower left triangle of the matrix is used. No check is performed to ensure
             /// that the given columns truly produce a symmetric matrix.
             #[inline]
             #[must_use]
-            pub const fn from_cols_array_unchecked(m: &[$t; 4]) -> Self {
-                Self::new(m[0], m[1], m[3])
+            pub const fn from_cols_array_unchecked(m: &[$t; 9]) -> Self {
+                Self::new(m[0], m[1], m[2], m[4], m[5], m[8])
             }
 
             /// Creates an array storing data in column major order.
             #[inline]
             #[must_use]
-            pub const fn to_cols_array(&self) -> [$t; 4] {
-                [self.m00, self.m01, self.m01, self.m11]
+            pub const fn to_cols_array(&self) -> [$t; 9] {
+                [
+                    self.m00, self.m01, self.m02, self.m01, self.m11, self.m12, self.m02, self.m12,
+                    self.m22,
+                ]
             }
 
-            /// Creates a symmetric 2x2 matrix from a 2D array stored in column major order.
+            /// Creates a symmetric 3x3 matrix from a 2D array stored in column major order.
             ///
             /// Only the lower left triangle of the matrix is used. No check is performed to ensure
             /// that the given columns truly produce a symmetric matrix.
             #[inline]
             #[must_use]
-            pub const fn from_cols_array_2d_unchecked(m: &[[$t; 2]; 2]) -> Self {
+            pub const fn from_cols_array_2d_unchecked(m: &[[$t; 3]; 3]) -> Self {
                 Self::from_cols_unchecked(
                     $vt::from_array(m[0]),
                     $vt::from_array(m[1]),
+                    $vt::from_array(m[2]),
                 )
             }
 
             /// Creates a 2D array storing data in column major order.
             #[inline]
             #[must_use]
-            pub const fn to_cols_array_2d(&self) -> [[$t; 2]; 2] {
-                [[self.m00, self.m01], [self.m01, self.m11]]
+            pub const fn to_cols_array_2d(&self) -> [[$t; 3]; 3] {
+                [
+                    [self.m00, self.m01, self.m02],
+                    [self.m01, self.m11, self.m12],
+                    [self.m02, self.m12, self.m22],
+                ]
             }
 
-            /// Creates a 2x2 matrix from the first 4 values in `slice`.
+            /// Creates a 3x3 matrix from the first 9 values in `slice`.
             ///
             /// Only the lower left triangle of the matrix is used. No check is performed to ensure
             /// that the given columns truly produce a symmetric matrix.
             ///
             /// # Panics
             ///
-            /// Panics if `slice` is less than 4 elements long.
+            /// Panics if `slice` is less than 9 elements long.
             #[inline]
             #[must_use]
             pub const fn from_cols_slice(slice: &[$t]) -> Self {
-                Self::new(slice[0], slice[1], slice[3])
+                Self::new(slice[0], slice[1], slice[2], slice[4], slice[5], slice[8])
             }
 
-            /// Creates a symmetric 2x2 matrix with its diagonal set to `diagonal` and all other entries set to `0.0`.
+            /// Creates a symmetric 3x3 matrix with its diagonal set to `diagonal` and all other entries set to `0.0`.
             #[inline]
             #[must_use]
             #[doc(alias = "scale")]
             pub const fn from_diagonal(diagonal: $vt) -> Self {
-                Self::new(diagonal.x, 0.0, diagonal.y)
+                Self::new(diagonal.x, 0.0, 0.0, diagonal.y, 0.0, diagonal.z)
             }
 
-            /// Tries to create a symmetric 2x2 matrix from a 2x2 matrix.
+            /// Tries to create a symmetric 3x3 matrix from a 3x3 matrix.
             ///
             /// # Errors
             ///
             /// Returns a [`MatConversionError`] if the given matrix is not symmetric.
             #[inline]
-            pub fn try_from_mat2(mat: $nonsymmetricn) -> Result<Self, MatConversionError> {
+            pub fn try_from_mat3(mat: $nonsymmetricn) -> Result<Self, MatConversionError> {
                 if mat.is_symmetric() {
-                    Ok(Self::from_mat2_unchecked(mat))
+                    Ok(Self::from_mat3_unchecked(mat))
                 } else {
                     Err(MatConversionError::Asymmetric)
                 }
             }
 
-            /// Creates a symmetric 2x2 matrix from a 2x2 matrix.
+            /// Creates a symmetric 3x3 matrix from a 3x3 matrix.
             ///
             /// Only the lower left triangle of the matrix is used. No check is performed to ensure
             /// that the given matrix is truly symmetric.
             #[inline]
             #[must_use]
-            pub fn from_mat2_unchecked(mat: $nonsymmetricn) -> Self {
+            pub const fn from_mat3_unchecked(mat: $nonsymmetricn) -> Self {
                 Self::new(
                     mat.x_axis.x,
                     mat.x_axis.y,
+                    mat.x_axis.z,
                     mat.y_axis.y,
+                    mat.y_axis.z,
+                    mat.z_axis.z,
                 )
             }
 
-            /// Creates a 2x2 matrix from the symmetric 2x2 matrix in `self`.
+            /// Creates a 3x3 matrix from the symmetric 3x3 matrix in `self`.
             #[inline]
             #[must_use]
             pub const fn to_mat3(&self) -> $nonsymmetricn {
                 $nonsymmetricn::from_cols_array(&self.to_cols_array())
             }
 
+            /// Creates a new symmetric 3x3 matrix from the outer product `v * v^T`.
+            #[inline(always)]
+            #[must_use]
+            pub fn from_outer_product(v: $vt) -> Self {
+                Self::new(
+                    v.x * v.x,
+                    v.x * v.y,
+                    v.x * v.z,
+                    v.y * v.y,
+                    v.y * v.z,
+                    v.z * v.z,
+                )
+            }
+
             /// Returns the matrix column for the given `index`.
             ///
             /// # Panics
             ///
-            /// Panics if `index` is greater than 1.
+            /// Panics if `index` is greater than 2.
             #[inline]
             #[must_use]
             pub const fn col(&self, index: usize) -> $vt {
                 match index {
-                    0 => $vt::new(self.m00, self.m01),
-                    1 => $vt::new(self.m01, self.m11),
+                    0 => $vt::new(self.m00, self.m01, self.m02),
+                    1 => $vt::new(self.m01, self.m11, self.m12),
+                    2 => $vt::new(self.m02, self.m12, self.m22),
                     _ => panic!("index out of bounds"),
                 }
             }
@@ -221,13 +270,14 @@ macro_rules! symmetric_mat2s {
             ///
             /// # Panics
             ///
-            /// Panics if `index` is greater than 1.
+            /// Panics if `index` is greater than 2.
             #[inline]
             #[must_use]
             pub const fn row(&self, index: usize) -> $vt {
                 match index {
-                    0 => $vt::new(self.m00, self.m01),
-                    1 => $vt::new(self.m01, self.m11),
+                    0 => $vt::new(self.m00, self.m01, self.m02),
+                    1 => $vt::new(self.m01, self.m11, self.m12),
+                    2 => $vt::new(self.m02, self.m12, self.m22),
                     _ => panic!("index out of bounds"),
                 }
             }
@@ -237,26 +287,38 @@ macro_rules! symmetric_mat2s {
             #[inline]
             #[must_use]
             pub fn is_finite(&self) -> bool {
-                self.m00.is_finite() && self.m01.is_finite() && self.m11.is_finite()
+                self.m00.is_finite()
+                    && self.m01.is_finite()
+                    && self.m11.is_finite()
+                    && self.m02.is_finite()
+                    && self.m12.is_finite()
+                    && self.m22.is_finite()
             }
 
             /// Returns `true` if any elements are `NaN`.
             #[inline]
             #[must_use]
             pub fn is_nan(&self) -> bool {
-                self.m00.is_nan() || self.m01.is_nan() || self.m11.is_nan()
+                self.m00.is_nan()
+                    || self.m01.is_nan()
+                    || self.m11.is_nan()
+                    || self.m02.is_nan()
+                    || self.m12.is_nan()
+                    || self.m22.is_nan()
             }
 
             /// Returns the determinant of `self`.
             #[inline]
             #[must_use]
             pub fn determinant(&self) -> $t {
-                // A = [ a c ]
-                //     | c b |
+                //     [ a d e ]
+                // A = | d b f |
+                //     [ e f c ]
                 //
-                // det(A) = ab - c^2
-                let [a, b, c] = [self.m00, self.m11, self.m01];
-                a * b - c * c
+                // det(A) = abc + 2def - af^2 - bd^2 - ce^2
+                let [a, b, c] = [self.m00, self.m11, self.m22];
+                let [d, e, f] = [self.m01, self.m02, self.m12];
+                a * b * c + 2.0 * d * e * f - a * f * f - b * d * d - c * e * e
             }
 
             /// Returns the inverse of `self`.
@@ -265,11 +327,23 @@ macro_rules! symmetric_mat2s {
             #[inline]
             #[must_use]
             pub fn inverse(&self) -> Self {
-                let inv_det = 1.0 / self.determinant();
+                let m00 = self.m11 * self.m22 - self.m12 * self.m12;
+                let m01 = self.m12 * self.m02 - self.m22 * self.m01;
+                let m02 = self.m01 * self.m12 - self.m02 * self.m11;
+
+                let inverse_determinant = 1.0 / (m00 * self.m00 + m01 * self.m01 + m02 * self.m02);
+
+                let m11 = self.m22 * self.m00 - self.m02 * self.m02;
+                let m12 = self.m02 * self.m01 - self.m00 * self.m12;
+                let m22 = self.m00 * self.m11 - self.m01 * self.m01;
+
                 Self {
-                    m00: self.m11 * inv_det,
-                    m01: -self.m01 * inv_det,
-                    m11: self.m00 * inv_det,
+                    m00: m00 * inverse_determinant,
+                    m01: m01 * inverse_determinant,
+                    m02: m02 * inverse_determinant,
+                    m11: m11 * inverse_determinant,
+                    m12: m12 * inverse_determinant,
+                    m22: m22 * inverse_determinant,
                 }
             }
 
@@ -280,80 +354,154 @@ macro_rules! symmetric_mat2s {
                 Self::new(
                     self.m00.abs(),
                     self.m01.abs(),
+                    self.m02.abs(),
                     self.m11.abs(),
+                    self.m12.abs(),
+                    self.m22.abs(),
                 )
             }
 
-            /// Transforms a 2D vector.
+            /// Computes `skew_symmetric(vec) * self * skew_symmetric(vec).transpose()` for a symmetric matrix `self`.
             #[inline]
             #[must_use]
-            pub fn mul_vec2(&self, rhs: $vt) -> $vt {
+            pub fn skew(&self, vec: $vt) -> Self {
+                // 27 multiplications and 14 additions
+
+                let xzy = vec.x * self.m12;
+                let yzx = vec.y * self.m02;
+                let zyx = vec.z * self.m01;
+
+                let ixy = vec.y * self.m12 - vec.z * self.m11;
+                let ixz = vec.y * self.m22 - vec.z * self.m12;
+                let iyx = vec.z * self.m00 - vec.x * self.m02;
+                let iyy = zyx - xzy;
+
+                let iyz = vec.z * self.m02 - vec.x * self.m22;
+                let izx = vec.x * self.m01 - vec.y * self.m00;
+                let izy = vec.x * self.m11 - vec.y * self.m01;
+                let izz = xzy - yzx;
+
+                Self::new(
+                    vec.y * ixz - vec.z * ixy,
+                    vec.y * iyz - vec.z * iyy,
+                    vec.y * izz - vec.z * izy,
+                    vec.z * iyx - vec.x * iyz,
+                    vec.z * izx - vec.x * izz,
+                    vec.x * izy - vec.y * izx,
+                )
+            }
+
+            /// Transforms a 3D vector.
+            #[inline]
+            #[must_use]
+            pub fn mul_vec3(&self, rhs: $vt) -> $vt {
                 let mut res = self.col(0).mul(rhs.x);
                 res = res.add(self.col(1).mul(rhs.y));
+                res = res.add(self.col(2).mul(rhs.z));
                 res
             }
 
-            /// Multiplies two 2x2 matrices.
+            /// Solves `self * x = rhs` for `x` using the LDLT decomposition.
+            ///
+            /// `self` must be a positive semidefinite matrix.
             #[inline]
             #[must_use]
-            pub fn mul_mat2(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
+            pub fn ldlt_solve(&self, rhs: $vt) -> $vt {
+                let d1 = self.m00;
+                let inv_d1 = 1.0 / d1;
+                let l21 = inv_d1 * self.m01;
+                let l31 = inv_d1 * self.m02;
+                let d2 = self.m11 - l21 * l21 * d1;
+                let inv_d2 = 1.0 / d2;
+                let l32 = inv_d2 * (self.m12 - l21 * l31 * d1);
+                let d3 = self.m22 - l31 * l31 * d1 - l32 * l32 * d2;
+                let inv_d3 = 1.0 / d3;
+
+                // Forward substitution: Solve L * y = b
+                let y1 = rhs.x;
+                let y2 = rhs.y - l21 * y1;
+                let y3 = rhs.z - l31 * y1 - l32 * y2;
+
+                // Diagonal: Solve D * z = y
+                let z1 = y1 * inv_d1;
+                let z2 = y2 * inv_d2;
+                let z3 = y3 * inv_d3;
+
+                // Backward substitution: Solve L^T * x = z
+                let x3 = z3;
+                let x2 = z2 - l32 * x3;
+                let x1 = z1 - l21 * x2 - l31 * x3;
+
+                $vt::new(x1, x2, x3)
+            }
+
+            /// Multiplies two 3x3 matrices.
+            #[inline]
+            #[must_use]
+            pub fn mul_mat3(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
                 self.mul(rhs)
             }
 
-            /// Adds two 2x2 matrices.
+            /// Adds two 3x3 matrices.
             #[inline]
             #[must_use]
-            pub fn add_mat2(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
+            pub fn add_mat3(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
                 self.add(rhs)
             }
 
-            /// Subtracts two 2x2 matrices.
+            /// Subtracts two 3x3 matrices.
             #[inline]
             #[must_use]
-            pub fn sub_mat2(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
+            pub fn sub_mat3(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
                 self.sub(rhs)
             }
 
-            /// Multiplies two 2x2 matrices.
+            /// Multiplies two 3x3 matrices.
             #[inline]
             #[must_use]
-            pub fn mul_symmetric_mat2(&self, rhs: &Self) -> $nonsymmetricn {
+            pub fn mul_symmetric_mat3(&self, rhs: &Self) -> $nonsymmetricn {
                 self.mul(rhs)
             }
 
-            /// Adds two 2x2 matrices.
+            /// Adds two 3x3 matrices.
             #[inline]
             #[must_use]
-            pub fn add_symmetric_mat2(&self, rhs: &Self) -> Self {
+            pub fn add_symmetric_mat3(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 2x2 matrices.
+            /// Subtracts two 3x3 matrices.
             #[inline]
             #[must_use]
-            pub fn sub_symmetric_mat2(&self, rhs: &Self) -> Self {
+            pub fn sub_symmetric_mat3(&self, rhs: &Self) -> Self {
                 self.sub(rhs)
             }
 
-            /// Multiplies a 2x2 matrix by a scalar.
+            /// Multiplies a 3x3 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn mul_scalar(&self, rhs: $t) -> Self {
                 Self::new(
                     self.m00 * rhs,
                     self.m01 * rhs,
+                    self.m02 * rhs,
                     self.m11 * rhs,
+                    self.m12 * rhs,
+                    self.m22 * rhs,
                 )
             }
 
-            /// Divides a 2x2 matrix by a scalar.
+            /// Divides a 3x3 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn div_scalar(&self, rhs: $t) -> Self {
                 Self::new(
                     self.m00 / rhs,
                     self.m01 / rhs,
+                    self.m02 / rhs,
                     self.m11 / rhs,
+                    self.m12 / rhs,
+                    self.m22 / rhs,
                 )
             }
         }
@@ -370,7 +518,7 @@ macro_rules! symmetric_mat2s {
 
             #[inline]
             fn try_from(mat: $nonsymmetricn) -> Result<Self, Self::Error> {
-                Self::try_from_mat2(mat)
+                Self::try_from_mat3(mat)
             }
         }
 
@@ -381,7 +529,10 @@ macro_rules! symmetric_mat2s {
                 Self::new(
                     self.m00 + rhs.m00,
                     self.m01 + rhs.m01,
+                    self.m02 + rhs.m02,
                     self.m11 + rhs.m11,
+                    self.m12 + rhs.m12,
+                    self.m22 + rhs.m22,
                 )
             }
         }
@@ -431,6 +582,7 @@ macro_rules! symmetric_mat2s {
                 $nonsymmetricn::from_cols(
                     self.col(0).add(rhs.x_axis),
                     self.col(1).add(rhs.y_axis),
+                    self.col(2).add(rhs.z_axis),
                 )
             }
         }
@@ -504,7 +656,10 @@ macro_rules! symmetric_mat2s {
                 Self::new(
                     self.m00 - rhs.m00,
                     self.m01 - rhs.m01,
+                    self.m02 - rhs.m02,
                     self.m11 - rhs.m11,
+                    self.m12 - rhs.m12,
+                    self.m22 - rhs.m22,
                 )
             }
         }
@@ -554,6 +709,7 @@ macro_rules! symmetric_mat2s {
                 $nonsymmetricn::from_cols(
                     self.col(0).sub(rhs.x_axis),
                     self.col(1).sub(rhs.y_axis),
+                    self.col(2).sub(rhs.z_axis),
                 )
             }
         }
@@ -625,7 +781,12 @@ macro_rules! symmetric_mat2s {
             #[inline]
             fn neg(self) -> Self::Output {
                 Self::new(
-                    -self.m00, -self.m01, -self.m11,
+                    -self.m00,
+                    -self.m01,
+                    -self.m02,
+                    -self.m11,
+                    -self.m12,
+                    -self.m22,
                 )
             }
         }
@@ -642,7 +803,11 @@ macro_rules! symmetric_mat2s {
             type Output = $nonsymmetricn;
             #[inline]
             fn mul(self, rhs: Self) -> Self::Output {
-                $nonsymmetricn::from_cols(self.mul(rhs.col(0)), self.mul(rhs.col(1)))
+                $nonsymmetricn::from_cols(
+                    self.mul(rhs.col(0)),
+                    self.mul(rhs.col(1)),
+                    self.mul(rhs.col(2)),
+                )
             }
         }
 
@@ -674,11 +839,22 @@ macro_rules! symmetric_mat2s {
             type Output = Self;
             #[inline]
             fn mul(self, rhs: $n) -> Self::Output {
-                Self::from_cols_array(&[
-                    self.x_axis.x * rhs.m00 + self.y_axis.x * rhs.m01,
-                    self.x_axis.y * rhs.m00 + self.y_axis.y * rhs.m01,
-                    self.x_axis.x * rhs.m01 + self.y_axis.x * rhs.m11,
-                    self.x_axis.y * rhs.m01 + self.y_axis.y * rhs.m11,
+                Self::from_cols_array_2d(&[
+                    [
+                        self.x_axis.x * rhs.m00 + self.y_axis.x * rhs.m01 + self.z_axis.x * rhs.m02,
+                        self.x_axis.y * rhs.m00 + self.y_axis.y * rhs.m01 + self.z_axis.y * rhs.m02,
+                        self.x_axis.z * rhs.m00 + self.y_axis.z * rhs.m01 + self.z_axis.z * rhs.m02,
+                    ],
+                    [
+                        self.x_axis.x * rhs.m01 + self.y_axis.x * rhs.m11 + self.z_axis.x * rhs.m12,
+                        self.x_axis.y * rhs.m01 + self.y_axis.y * rhs.m11 + self.z_axis.y * rhs.m12,
+                        self.x_axis.z * rhs.m01 + self.y_axis.z * rhs.m11 + self.z_axis.z * rhs.m12,
+                    ],
+                    [
+                        self.x_axis.x * rhs.m02 + self.y_axis.x * rhs.m12 + self.z_axis.x * rhs.m22,
+                        self.x_axis.y * rhs.m02 + self.y_axis.y * rhs.m12 + self.z_axis.y * rhs.m22,
+                        self.x_axis.z * rhs.m02 + self.y_axis.z * rhs.m12 + self.z_axis.z * rhs.m22,
+                    ],
                 ])
             }
         }
@@ -728,6 +904,7 @@ macro_rules! symmetric_mat2s {
                 $nonsymmetricn::from_cols(
                     self.mul(rhs.x_axis),
                     self.mul(rhs.y_axis),
+                    self.mul(rhs.z_axis),
                 )
             }
         }
@@ -760,7 +937,7 @@ macro_rules! symmetric_mat2s {
             type Output = $vt;
             #[inline]
             fn mul(self, rhs: $vt) -> Self::Output {
-                self.mul_vec2(rhs)
+                self.mul_vec3(rhs)
             }
         }
 
@@ -947,7 +1124,7 @@ macro_rules! symmetric_mat2s {
         impl From<$n> for $nonsymmetricn {
             #[inline]
             fn from(mat: $n) -> Self {
-                Self::from_cols(mat.col(0), mat.col(1))
+                Self::from_cols(mat.col(0), mat.col(1), mat.col(2))
             }
         }
 
@@ -977,6 +1154,9 @@ macro_rules! symmetric_mat2s {
                 self.m00.abs_diff_eq(&other.m00, epsilon)
                     && self.m01.abs_diff_eq(&other.m01, epsilon)
                     && self.m11.abs_diff_eq(&other.m11, epsilon)
+                    && self.m02.abs_diff_eq(&other.m02, epsilon)
+                    && self.m12.abs_diff_eq(&other.m12, epsilon)
+                    && self.m22.abs_diff_eq(&other.m22, epsilon)
             }
         }
 
@@ -997,6 +1177,9 @@ macro_rules! symmetric_mat2s {
                 self.m00.relative_eq(&other.m00, epsilon, max_relative)
                     && self.m01.relative_eq(&other.m01, epsilon, max_relative)
                     && self.m11.relative_eq(&other.m11, epsilon, max_relative)
+                    && self.m02.relative_eq(&other.m02, epsilon, max_relative)
+                    && self.m12.relative_eq(&other.m12, epsilon, max_relative)
+                    && self.m22.relative_eq(&other.m22, epsilon, max_relative)
             }
         }
 
@@ -1017,6 +1200,9 @@ macro_rules! symmetric_mat2s {
                 self.m00.ulps_eq(&other.m00, epsilon, max_ulps)
                     && self.m01.ulps_eq(&other.m01, epsilon, max_ulps)
                     && self.m11.ulps_eq(&other.m11, epsilon, max_ulps)
+                    && self.m02.ulps_eq(&other.m02, epsilon, max_ulps)
+                    && self.m12.ulps_eq(&other.m12, epsilon, max_ulps)
+                    && self.m22.ulps_eq(&other.m22, epsilon, max_ulps)
             }
         }
 
@@ -1025,7 +1211,10 @@ macro_rules! symmetric_mat2s {
                 f.debug_struct(stringify!($n))
                     .field("m00", &self.m00)
                     .field("m01", &self.m01)
+                    .field("m02", &self.m02)
                     .field("m11", &self.m11)
+                    .field("m12", &self.m12)
+                    .field("m22", &self.m22)
                     .finish()
             }
         }
@@ -1035,14 +1224,18 @@ macro_rules! symmetric_mat2s {
                 if let Some(p) = f.precision() {
                     write!(
                         f,
-                        "[[{:.*}, {:.*}], [{:.*}, {:.*}]]",
-                        p, self.m00, p, self.m01, p, self.m01, p, self.m11
+                        "[[{:.*}, {:.*}, {:.*}], [{:.*}, {:.*}, {:.*}], [{:.*}, {:.*}, {:.*}]]",
+                        p, self.m00, p, self.m01, p, self.m02,
+                        p, self.m01, p, self.m11, p, self.m12,
+                        p, self.m02, p, self.m12, p, self.m22,
                     )
                 } else {
                     write!(
                         f,
-                        "[[{}, {}], [{}, {}]]",
-                        self.m00, self.m01, self.m01, self.m11
+                        "[[{}, {}, {}], [{}, {}, {}], [{}, {}, {}]]",
+                        self.m00, self.m01, self.m02,
+                        self.m01, self.m11, self.m12,
+                        self.m02, self.m12, self.m22,
                     )
                 }
             }
@@ -1051,8 +1244,68 @@ macro_rules! symmetric_mat2s {
     }
 }
 
+impl SymmetricMat3 {
+    /// Transforms a [`Vec3A`].
+    #[inline]
+    #[must_use]
+    pub fn mul_vec3a(&self, rhs: Vec3A) -> Vec3A {
+        self.mul_vec3(rhs.into()).into()
+    }
+}
+
+impl Mul<Vec3A> for SymmetricMat3 {
+    type Output = Vec3A;
+    #[inline]
+    fn mul(self, rhs: Vec3A) -> Self::Output {
+        self.mul_vec3a(rhs)
+    }
+}
+
 #[cfg(feature = "f32")]
-symmetric_mat2s!(SymmetricMat2 => Mat2, Vec2, f32);
+symmetric_mat3s!(SymmetricMat3 => Mat3, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat2s!(DSymmetricMat2 => DMat2, DVec2, f64);
+symmetric_mat3s!(DSymmetricMat3 => DMat3, DVec2, DVec3, f64);
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+    use glam::Vec3;
+
+    use crate::SymmetricMat3;
+
+    #[test]
+    fn ldlt_solve() {
+        let sym3 = SymmetricMat3::new(4.0, 1.0, 5.0, 0.0, 2.0, 6.0);
+
+        // Known solution x
+        let x = Vec3::new(1.0, 2.0, 3.0);
+
+        // Compute rhs = A * x
+        let rhs = sym3.mul_vec3(x);
+        assert_eq!(rhs, Vec3::new(21.0, 7.0, 27.0));
+
+        // Solve
+        let sol = sym3.ldlt_solve(rhs);
+
+        // Check solution
+        assert_relative_eq!(sol, x, epsilon = 1e-4);
+    }
+
+    #[test]
+    fn ldlt_solve_identity() {
+        let sym3 = SymmetricMat3::IDENTITY;
+
+        // Known solution x
+        let x = Vec3::new(7.0, -3.0, 2.5);
+
+        // Compute rhs = A * x
+        let rhs = sym3.mul_vec3(x);
+
+        // Solve
+        let sol = sym3.ldlt_solve(rhs);
+
+        // Check solution
+        assert_relative_eq!(sol, x, epsilon = 1e-6);
+    }
+}

@@ -4,6 +4,8 @@ use core::ops::Mul;
 use glam::{DMat2, DMat3, DMat4, DVec2, DVec3, DVec4};
 use glam::{Mat2, Mat3, Mat3A, Mat4, Vec2, Vec3, Vec3A, Vec4};
 
+// TODO: Implement optimized versions of the `inverse_or_zero` method.
+
 /// An extension trait for matrices.
 pub trait SquareMatExt {
     /// The type of the diagonal of the matrix.
