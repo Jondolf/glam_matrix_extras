@@ -5,6 +5,7 @@
 
 mod ops;
 
+#[cfg(feature = "f32")]
 mod eigen;
 mod mat_ext;
 mod symmetric_mat;
