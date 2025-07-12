@@ -8,11 +8,11 @@ mod ops;
 #[cfg(feature = "f32")]
 mod eigen;
 mod mat_ext;
-mod symmetric_mat;
+mod matrices;
 
 pub use eigen::*;
 pub use mat_ext::SquareMatExt;
-pub use symmetric_mat::*;
+pub use matrices::*;
 
 /// An error that can occur when converting matrices to other representations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -8,7 +8,8 @@ Matrix types and utilities for [`glam`].
 
 - `SquareMatExt` extension trait with useful helpers like `is_symmetric`, `inverse_or_zero`, and `diagonal`
 - Rectangular matrices
-  - [ ] 2x3 matrices: `Mat23`, `DMat23`
+  - [x] 2x3 matrices: `Mat23`, `DMat23`
+  - [x] 3x2 matrices: `Mat32`, `DMat32`
 - Symmetric matrices
   - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `DSymmetricMat2`
   - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `DSymmetricMat3`
