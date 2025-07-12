@@ -224,6 +224,13 @@ macro_rules! mat23s {
                 self.x_axis.is_nan() || self.y_axis.is_nan() || self.z_axis.is_nan()
             }
 
+            /// Returns the transpose of `self`.
+            #[inline]
+            #[must_use]
+            pub fn transpose(&self) -> $m32t {
+                $m32t::from_rows(self.x_axis, self.y_axis, self.z_axis)
+            }
+
             /// Takes the absolute value of each element in `self`.
             #[inline]
             #[must_use]
@@ -244,7 +251,14 @@ macro_rules! mat23s {
             /// Multiplies `self` by a 3x3 matrix, `self * rhs`.
             #[inline]
             #[must_use]
-            pub fn mul_mat3(&self, rhs: $m3t) -> Self {
+            pub fn mul_mat3(&self, rhs: &$m3t) -> Self {
+                self.mul(rhs)
+            }
+
+            /// Multiplies `self` by a 3x2 matrix, `self * rhs`.
+            #[inline]
+            #[must_use]
+            pub fn mul_mat32(&self, rhs: &$m32t) -> $m2t {
                 self.mul(rhs)
             }
 
@@ -456,6 +470,47 @@ macro_rules! mat23s {
             type Output = $n;
             #[inline]
             fn mul(self, rhs: &$m3t) -> Self::Output {
+                (*self).mul(*rhs)
+            }
+        }
+
+        impl Mul<$m32t> for $n {
+            type Output = $m2t;
+            #[inline]
+            fn mul(self, rhs: $m32t) -> Self::Output {
+                $m2t::from_cols(
+                    $v2t::new(
+                        self.row(0).dot(rhs.x_axis),
+                        self.row(1).dot(rhs.x_axis),
+                    ),
+                    $v2t::new(
+                        self.row(0).dot(rhs.y_axis),
+                        self.row(1).dot(rhs.y_axis),
+                    ),
+                )
+            }
+        }
+
+        impl Mul<&$m32t> for $n {
+            type Output = $m2t;
+            #[inline]
+            fn mul(self, rhs: &$m32t) -> Self::Output {
+                self.mul(*rhs)
+            }
+        }
+
+        impl Mul<$m32t> for &$n {
+            type Output = $m2t;
+            #[inline]
+            fn mul(self, rhs: $m32t) -> Self::Output {
+                (*self).mul(rhs)
+            }
+        }
+
+        impl Mul<&$m32t> for &$n {
+            type Output = $m2t;
+            #[inline]
+            fn mul(self, rhs: &$m32t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
@@ -749,7 +804,7 @@ macro_rules! mat23s {
 }
 
 #[cfg(feature = "f32")]
-mat23s!(Mat23 => DMat32, Mat2, Mat3, Vec2, Vec3, f32);
+mat23s!(Mat23 => Mat32, Mat2, Mat3, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
 mat23s!(DMat23 => DMat32, DMat2, DMat3, DVec2, DVec3, f64);
@@ -758,7 +813,7 @@ mat23s!(DMat23 => DMat32, DMat2, DMat3, DVec2, DVec3, f64);
 mod tests {
     use glam::{Mat2, Mat3, vec2, vec3};
 
-    use super::Mat23;
+    use crate::{Mat23, Mat32};
 
     #[test]
     fn mat23_mul_vec3() {
@@ -781,7 +836,18 @@ mod tests {
         );
 
         let expected = Mat23::from_rows(vec3(67.0, 36.0, 69.0), vec3(77.0, 87.0, 83.0));
-        let result = mat23.mul_mat3(mat3);
+        let result = mat23.mul_mat3(&mat3);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn mat23_mul_mat32() {
+        let mat23 = Mat23::from_rows(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
+        let mat32 = Mat32::from_cols(vec3(2.0, 5.0, 1.0), vec3(8.0, 3.0, 4.0));
+
+        let expected = Mat2::from_cols(vec2(19.0, 61.0), vec2(59.0, 91.0));
+        let result = mat23.mul_mat32(&mat32);
 
         assert_eq!(result, expected);
     }
@@ -795,5 +861,6 @@ mod tests {
         let result = mat23_a.mul_transposed_mat23(&mat23_b);
 
         assert_eq!(result, expected);
+        assert_eq!(result, mat23_a * mat23_b.transpose());
     }
 }
