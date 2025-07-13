@@ -63,9 +63,9 @@ macro_rules! symmetric_mat3s {
         /// if the matrices are commutable, meaning that `AB = BA`.
         #[derive(Clone, Copy, PartialEq)]
         #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
-        #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
         #[cfg_attr(
-            all(feature = "bevy_reflect", feature = "serialize"),
+            all(feature = "bevy_reflect", feature = "serde"),
             reflect(Debug, Default, PartialEq, Serialize, Deserialize)
         )]
         pub struct $n {

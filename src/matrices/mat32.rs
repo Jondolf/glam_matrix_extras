@@ -19,9 +19,9 @@ macro_rules! mat32s {
         /// A 3x2 column-major matrix.
         #[derive(Clone, Copy, PartialEq)]
         #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
-        #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
         #[cfg_attr(
-            all(feature = "bevy_reflect", feature = "serialize"),
+            all(feature = "bevy_reflect", feature = "serde"),
             reflect(Debug, Default, PartialEq, Serialize, Deserialize)
         )]
         pub struct $n {

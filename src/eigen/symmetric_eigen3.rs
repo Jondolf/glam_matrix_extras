@@ -13,7 +13,7 @@ use glam::{Mat3, Vec3, Vec3Swizzles};
 /// [eigen decomposition]: https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SymmetricEigen3 {
     /// The eigenvalues of the [`SymmetricMat3`].
     ///
