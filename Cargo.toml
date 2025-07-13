@@ -24,7 +24,7 @@ f64 = []
 bevy_reflect = ["dep:bevy_reflect", "bevy_reflect/glam"]
 
 # Enable data serialization/deserialization using `serde`.
-serialize = ["dep:serde", "glam/serde"]
+serde = ["dep:serde", "glam/serde"]
 
 # Enable `approx` to approximate floating point equality comparisons and assertions for types.
 approx = ["dep:approx", "glam/approx"]
