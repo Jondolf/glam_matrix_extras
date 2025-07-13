@@ -12,7 +12,7 @@ keywords = ["gamedev", "math", "matrix"]
 categories = ["game-development", "science", "simulation"]
 
 [features]
-default = ["libm", "f32", "f64"]
+default = ["std", "f32", "f64"]
 
 # Enable single-precision floating point types.
 f32 = []
