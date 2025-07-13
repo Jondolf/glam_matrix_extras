@@ -1,24 +1,23 @@
 use core::iter::Sum;
 use core::ops::*;
 #[cfg(feature = "f64")]
-use glam::{DMat3, DVec3};
-use glam::{Mat3, Vec3};
+use glam::{DVec2, DVec3};
+use glam::{Vec2, Vec3};
 
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 #[cfg(feature = "f64")]
-use crate::DSymmetricMat3;
-use crate::SquareMatExt;
+use crate::{DMat23, DSymmetricMat2, DSymmetricMat3};
 #[cfg(feature = "f32")]
-use crate::SymmetricMat3;
+use crate::{Mat23, SymmetricMat2, SymmetricMat3};
 
-macro_rules! symmetric_mat6s {
-    ($($n:ident => $symmetricm3t:ident, $m3t:ident, $v3t:ident, $t:ident),+) => {
+macro_rules! symmetric_mat5s {
+    ($($n:ident => $symmetricm2t:ident, $symmetricm3t:ident, $m23t:ident, $v2t:ident, $v3t:ident, $t:ident),+) => {
         $(
-        /// The bottom left triangle (including the diagonal) of a symmetric 6x6 column-major matrix.
+        /// The bottom left triangle (including the diagonal) of a symmetric 5x5 column-major matrix.
         ///
-        /// This is useful for storing a symmetric 6x6 matrix in a more compact form and performing some
+        /// This is useful for storing a symmetric 5x5 matrix in a more compact form and performing some
         /// matrix operations more efficiently.
         ///
         /// Some defining properties of symmetric matrices include:
@@ -32,7 +31,7 @@ macro_rules! symmetric_mat6s {
         /// However, the product of two symmetric matrices is *only* symmetric
         /// if the matrices are commutable, meaning that `AB = BA`.
         ///
-        /// The 6x6 matrix is represented as:
+        /// The 5x5 matrix is represented as:
         ///
         /// ```text
         /// [ A  BT ]
@@ -49,37 +48,37 @@ macro_rules! symmetric_mat6s {
             /// The bottom left triangle of the top left 3x3 block of the matrix,
             /// including the diagonal.
             pub a: $symmetricm3t,
-            /// The bottom left 3x3 block of the matrix.
-            pub b: $m3t,
-            /// The bottom left triangle of the bottom right 3x3 block of the matrix,
+            /// The bottom left 2x3 block of the matrix.
+            pub b: $m23t,
+            /// The bottom left triangle of the bottom right 2x2 block of the matrix,
             /// including the diagonal.
-            pub d: $symmetricm3t,
+            pub d: $symmetricm2t,
         }
 
         impl $n {
-            /// A symmetric 6x6 matrix with all elements set to `0.0`.
+            /// A symmetric 5x5 matrix with all elements set to `0.0`.
             pub const ZERO: Self = Self::new(
                 $symmetricm3t::ZERO,
-                $m3t::ZERO,
-                $symmetricm3t::ZERO,
+                $m23t::ZERO,
+                $symmetricm2t::ZERO,
             );
 
-            /// A symmetric 6x6 identity matrix, where all diagonal elements are `1.0`,
+            /// A symmetric 5x5 identity matrix, where all diagonal elements are `1.0`,
             /// and all off-diagonal elements are `0.0`.
             pub const IDENTITY: Self = Self::new(
                 $symmetricm3t::IDENTITY,
-                $m3t::ZERO,
-                $symmetricm3t::IDENTITY,
+                $m23t::ZERO,
+                $symmetricm2t::IDENTITY,
             );
 
             /// All NaNs.
             pub const NAN: Self = Self::new(
                 $symmetricm3t::NAN,
-                $m3t::NAN,
-                $symmetricm3t::NAN,
+                $m23t::NAN,
+                $symmetricm2t::NAN,
             );
 
-            /// Creates a new symmetric 6x6 matrix from its bottom left triangle, including diagonal elements.
+            /// Creates a new symmetric 5x5 matrix from its bottom left triangle, including diagonal elements.
             ///
             /// The matrix is represented as:
             ///
@@ -91,20 +90,20 @@ macro_rules! symmetric_mat6s {
             #[must_use]
             pub const fn new(
                 a: $symmetricm3t,
-                b: $m3t,
-                d: $symmetricm3t,
+                b: $m23t,
+                d: $symmetricm2t,
             ) -> Self {
                 Self { a, b, d }
             }
 
-            /// Creates a new symmetric 6x6 matrix from the outer product `[v1, v2] * [v1, v2]^T`.
+            /// Creates a new symmetric 5x5 matrix from the outer product `[v1, v2] * [v1, v2]^T`.
             #[inline]
             #[must_use]
-            pub fn from_outer_product(v1: $v3t, v2: $v3t) -> Self {
+            pub fn from_outer_product(v1: $v3t, v2: $v2t) -> Self {
                 Self::new(
                     $symmetricm3t::from_outer_product(v1),
-                    $m3t::from_outer_product(v1, v2),
-                    $symmetricm3t::from_outer_product(v2),
+                    $m23t::from_outer_product(v2, v1),
+                    $symmetricm2t::from_outer_product(v2),
                 )
             }
 
@@ -123,6 +122,36 @@ macro_rules! symmetric_mat6s {
                 self.a.is_nan() || self.b.is_nan() || self.d.is_nan()
             }
 
+            /// Returns the inverse of `self`.
+            ///
+            /// If the matrix is not invertible the returned matrix will be invalid.
+            #[inline]
+            #[must_use]
+            pub fn inverse(&self) -> Self {
+                let inv_d = self.d.inverse();
+                let bt_inv_d = inv_d.mul(self.b);
+                let bt_inv_d_b = $symmetricm3t::complete_mat23_sandwich(&bt_inv_d, &self.b);
+
+                let res_a = self.a.sub(bt_inv_d_b).inverse();
+                let neg_res_bt = bt_inv_d.mul(res_a);
+                let res_d = $symmetricm2t::complete_mat23_sandwich(&bt_inv_d, &neg_res_bt).add(inv_d);
+
+                Self::new(res_a, -neg_res_bt, res_d)
+            }
+
+            /// Returns the inverse of `self`, or a zero matrix if the matrix is not invertible.
+            #[inline]
+            #[must_use]
+            pub fn inverse_or_zero(&self) -> Self {
+                // TODO: Optimize this.
+                let inverse = self.inverse();
+                if inverse.is_finite() {
+                    inverse
+                } else {
+                    Self::ZERO
+                }
+            }
+
             /// Takes the absolute value of each element in `self`.
             #[inline]
             #[must_use]
@@ -130,96 +159,37 @@ macro_rules! symmetric_mat6s {
                 Self::new(self.a.abs(), self.b.abs(), self.d.abs())
             }
 
-            /// Transforms a 6x1 vector that is split into two 3x1 vectors.
+            /// Transforms a 5x1 vector that is split into a 3x1 vector and 2x1 vector.
             #[inline]
             #[must_use]
-            pub fn mul_vec6(&self, rhs1: $v3t, rhs2: $v3t) -> ($v3t, $v3t) {
+            pub fn mul_vec5(&self, rhs1: $v3t, rhs2: $v2t) -> ($v3t, $v2t) {
                 let res1 = $v3t::new(
-                    rhs1.x * self.a.m00 + rhs1.y * self.a.m01 + rhs1.z * self.a.m02 + rhs2.dot(self.b.row(0)),
-                    rhs1.x * self.a.m01 + rhs1.y * self.a.m11 + rhs1.z * self.a.m12 + rhs2.dot(self.b.row(1)),
-                    rhs1.x * self.a.m02 + rhs1.y * self.a.m12 + rhs1.z * self.a.m22 + rhs2.dot(self.b.row(2)),
+                    rhs1.x * self.a.m00 + rhs1.y * self.a.m01 + rhs1.z * self.a.m02 + rhs2.dot(self.b.col(0)),
+                    rhs1.x * self.a.m01 + rhs1.y * self.a.m11 + rhs1.z * self.a.m12 + rhs2.dot(self.b.col(1)),
+                    rhs1.x * self.a.m02 + rhs1.y * self.a.m12 + rhs1.z * self.a.m22 + rhs2.dot(self.b.col(2)),
                 );
-                let res2 = $v3t::new(
-                    rhs1.dot(self.b.row(0)) + rhs2.x * self.d.m00 + rhs2.y * self.d.m01 + rhs2.z * self.d.m02,
-                    rhs1.dot(self.b.row(1)) + rhs2.x * self.d.m01 + rhs2.y * self.d.m11 + rhs2.z * self.d.m12,
-                    rhs1.dot(self.b.row(2)) + rhs2.x * self.d.m02 + rhs2.y * self.d.m12 + rhs2.z * self.d.m22,
+                let res2 = $v2t::new(
+                    rhs1.dot(self.b.row(0)) + rhs2.x * self.d.m00 + rhs2.y * self.d.m01,
+                    rhs1.dot(self.b.row(1)) + rhs2.x * self.d.m01 + rhs2.y * self.d.m11,
                 );
                 (res1, res2)
             }
 
-            /// Solves `self * [x1, x2] = [rhs1, rhs2]` for `x1` and `x2` using the LDLT decomposition.
-            ///
-            /// `self` must be a positive semidefinite matrix.
+            /// Adds two 5x5 matrices.
             #[inline]
             #[must_use]
-            pub fn ldlt_solve(&self, rhs1: $v3t, rhs2: $v3t) -> ($v3t, $v3t) {
-                let (a, b, d) = (self.a, self.b, self.d);
-
-                // Reference: Symmetric6x6Wide in Bepu
-                // https://github.com/bepu/bepuphysics2/blob/bfb11dc2020555b09978c473d9655509e844032c/BepuUtilities/Symmetric6x6Wide.cs#L84
-
-                let d1 = a.m00;
-                let inv_d1 = 1.0 / d1;
-                let l21 = inv_d1 * a.m01;
-                let l31 = inv_d1 * a.m02;
-                let l41 = inv_d1 * b.x_axis.x;
-                let l51 = inv_d1 * b.y_axis.x;
-                let l61 = inv_d1 * b.z_axis.x;
-                let d2 = a.m11 - l21 * l21 * d1;
-                let inv_d2 = 1.0 / d2;
-                let l32 = inv_d2 * (a.m12 - l21 * l31 * d1);
-                let l42 = inv_d2 * (b.x_axis.y - l21 * l41 * d1);
-                let l52 = inv_d2 * (b.y_axis.y - l21 * l51 * d1);
-                let l62 = inv_d2 * (b.z_axis.y - l21 * l61 * d1);
-                let d3 = a.m22 - l31 * l31 * d1 - l32 * l32 * d2;
-                let inv_d3 = 1.0 / d3;
-                let l43 = inv_d3 * (b.x_axis.z - l31 * l41 * d1 - l32 * l42 * d2);
-                let l53 = inv_d3 * (b.y_axis.z - l31 * l51 * d1 - l32 * l52 * d2);
-                let l63 = inv_d3 * (b.z_axis.z - l31 * l61 * d1 - l32 * l62 * d2);
-                let d4 = d.m00 - l41 * l41 * d1 - l42 * l42 * d2 - l43 * l43 * d3;
-                let inv_d4 = 1.0 / d4;
-                let l54 = inv_d4 * (d.m01 - l41 * l51 * d1 - l42 * l52 * d2 - l43 * l53 * d3);
-                let l64 = inv_d4 * (d.m02 - l41 * l61 * d1 - l42 * l62 * d2 - l43 * l63 * d3);
-                let d5 = d.m11 - l51 * l51 * d1 - l52 * l52 * d2 - l53 * l53 * d3 - l54 * l54 * d4;
-                let inv_d5 = 1.0 / d5;
-                let l65 = inv_d5 * (d.m12 - l51 * l61 * d1 - l52 * l62 * d2 - l53 * l63 * d3 - l54 * l64 * d4);
-                let d6 = d.m22 - l61 * l61 * d1 - l62 * l62 * d2 - l63 * l63 * d3 - l64 * l64 * d4 - l65 * l65 * d5;
-                let inv_d6 = 1.0 / d6;
-
-                // We now have the components of L and D, so we can solve the system.
-                let mut x1 = rhs1;
-                let mut x2 = rhs2;
-                x1.y -= l21 * x1.x;
-                x1.z -= l31 * x1.x + l32 * x1.y;
-                x2.x -= l41 * x1.x + l42 * x1.y + l43 * x1.z;
-                x2.y -= l51 * x1.x + l52 * x1.y + l53 * x1.z + l54 * x2.x;
-                x2.z -= l61 * x1.x + l62 * x1.y + l63 * x1.z + l64 * x2.x + l65 * x2.y;
-
-                x2.z *= inv_d6;
-                x2.y = x2.y * inv_d5 - l65 * x2.z;
-                x2.x = x2.x * inv_d4 - l64 * x2.z - l54 * x2.y;
-                x1.z = x1.z * inv_d3 - l63 * x2.z - l53 * x2.y - l43 * x2.x;
-                x1.y = x1.y * inv_d2 - l62 * x2.z - l52 * x2.y - l42 * x2.x - l32 * x1.z;
-                x1.x = x1.x * inv_d1 - l61 * x2.z - l51 * x2.y - l41 * x2.x - l31 * x1.z - l21 * x1.y;
-
-                (x1, x2)
-            }
-
-            /// Adds two 6x6 matrices.
-            #[inline]
-            #[must_use]
-            pub fn add_symmetric_mat6(&self, rhs: &Self) -> Self {
+            pub fn add_symmetric_mat5(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 6x6 matrices.
+            /// Subtracts two 5x5 matrices.
             #[inline]
             #[must_use]
-            pub fn sub_symmetric_mat6(&self, rhs: &Self) -> Self {
+            pub fn sub_symmetric_mat5(&self, rhs: &Self) -> Self {
                 self.sub(rhs)
             }
 
-            /// Multiplies a 6x6 matrix by a scalar.
+            /// Multiplies a 5x5 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn mul_scalar(&self, rhs: $t) -> Self {
@@ -230,7 +200,7 @@ macro_rules! symmetric_mat6s {
                 )
             }
 
-            /// Divides a 6x6 matrix by a scalar.
+            /// Divides a 5x5 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn div_scalar(&self, rhs: $t) -> Self {
@@ -537,7 +507,7 @@ macro_rules! symmetric_mat6s {
             #[inline]
             fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
                 self.a.abs_diff_eq(&other.a, epsilon)
-                    && self.b.abs_diff_eq(other.b, epsilon)
+                    && self.b.abs_diff_eq(&other.b, epsilon)
                     && self.d.abs_diff_eq(&other.d, epsilon)
             }
         }
@@ -598,49 +568,33 @@ macro_rules! symmetric_mat6s {
                     write!(
                         f,
                         r#"[
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
-  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
+  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
+  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
+  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
+  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
+  [{:.*}, {:.*}, {:.*}, {:.*}, {:.*}],
 ]"#,
-                        p, self.a.m00, p, self.a.m01, p, self.a.m02,
-                        p, self.b.x_axis.x, p, self.b.x_axis.y, p, self.b.x_axis.z,
-                        p, self.a.m01, p, self.a.m11, p, self.a.m12,
-                        p, self.b.y_axis.x, p, self.b.y_axis.y, p, self.b.y_axis.z,
-                        p, self.a.m02, p, self.a.m12, p, self.a.m22,
-                        p, self.b.z_axis.x, p, self.b.z_axis.y, p, self.b.z_axis.z,
-                        p, self.b.x_axis.x, p, self.b.y_axis.x, p, self.b.z_axis.x,
-                        p, self.d.m00, p, self.d.m01, p, self.d.m02,
-                        p, self.b.x_axis.y, p, self.b.y_axis.y, p, self.b.z_axis.y,
-                        p, self.d.m01, p, self.d.m11, p, self.d.m12,
-                        p, self.b.x_axis.z, p, self.b.y_axis.z, p, self.b.z_axis.z,
-                        p, self.d.m02, p, self.d.m12, p, self.d.m22,
+                        p, self.a.m00, p, self.a.m01, p, self.a.m02, p, self.b.x_axis.x, p, self.b.x_axis.y,
+                        p, self.a.m01, p, self.a.m11, p, self.a.m12, p, self.b.y_axis.x, p, self.b.y_axis.y,
+                        p, self.a.m02, p, self.a.m12, p, self.a.m22, p, self.b.z_axis.x, p, self.b.z_axis.y,
+                        p, self.b.x_axis.x, p, self.b.y_axis.x, p, self.b.z_axis.x, p, self.d.m00, p, self.d.m01,
+                        p, self.b.x_axis.y, p, self.b.y_axis.y, p, self.b.z_axis.y, p, self.d.m01, p, self.d.m11,
                     )
                 } else {
                     write!(
                         f,
                         r#"[
-  [{}, {}, {}, {}, {}, {}],
-  [{}, {}, {}, {}, {}, {}],
-  [{}, {}, {}, {}, {}, {}],
-  [{}, {}, {}, {}, {}, {}],
-  [{}, {}, {}, {}, {}, {}],
-  [{}, {}, {}, {}, {}, {}],
+  [{}, {}, {}, {}, {}],
+  [{}, {}, {}, {}, {}],
+  [{}, {}, {}, {}, {}],
+  [{}, {}, {}, {}, {}],
+  [{}, {}, {}, {}, {}],
 ]"#,
-                        self.a.m00, self.a.m01, self.a.m02,
-                        self.b.x_axis.x, self.b.x_axis.y, self.b.x_axis.z,
-                        self.a.m01, self.a.m11, self.a.m12,
-                        self.b.y_axis.x, self.b.y_axis.y, self.b.y_axis.z,
-                        self.a.m02, self.a.m12, self.a.m22,
-                        self.b.z_axis.x, self.b.z_axis.y, self.b.z_axis.z,
-                        self.b.x_axis.x, self.b.y_axis.x, self.b.z_axis.x,
-                        self.d.m00, self.d.m01, self.d.m02,
-                        self.b.x_axis.y, self.b.y_axis.y, self.b.z_axis.y,
-                        self.d.m01, self.d.m11, self.d.m12,
-                        self.b.x_axis.z, self.b.y_axis.z, self.b.z_axis.z,
-                        self.d.m02, self.d.m12, self.d.m22,
+                        self.a.m00, self.a.m01, self.a.m02, self.b.x_axis.x, self.b.x_axis.y,
+                        self.a.m01, self.a.m11, self.a.m12, self.b.y_axis.x, self.b.y_axis.y,
+                        self.a.m02, self.a.m12, self.a.m22, self.b.z_axis.x, self.b.z_axis.y,
+                        self.b.x_axis.x, self.b.y_axis.x, self.b.z_axis.x, self.d.m00, self.d.m01,
+                        self.b.x_axis.y, self.b.y_axis.y, self.b.z_axis.y, self.d.m01, self.d.m11,
                     )
                 }
             }
@@ -650,58 +604,47 @@ macro_rules! symmetric_mat6s {
 }
 
 #[cfg(feature = "f32")]
-symmetric_mat6s!(SymmetricMat6 => SymmetricMat3, Mat3, Vec3, f32);
+symmetric_mat5s!(SymmetricMat5 => SymmetricMat2, SymmetricMat3, Mat23, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat6s!(DSymmetricMat6 => DSymmetricMat3, DMat3, DVec3, f64);
+symmetric_mat5s!(DSymmetricMat5 => DSymmetricMat2, DSymmetricMat3, DMat23, DVec2, DVec3, f64);
 
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use glam::{Mat3, Vec3};
+    use glam::{Vec2, Vec3, vec2, vec3};
 
-    use crate::{SymmetricMat3, SymmetricMat6};
+    use crate::{Mat23, SymmetricMat2, SymmetricMat3, SymmetricMat5};
 
     #[test]
-    fn ldlt_solve() {
-        let a = SymmetricMat3::new(4.0, 1.0, 5.0, 0.0, 2.0, 6.0);
-        let b = Mat3::IDENTITY;
-        let d = SymmetricMat3::new(7.0, 0.0, 8.0, 0.0, 0.0, 9.0);
-        let mat = SymmetricMat6 { a, b, d };
+    fn mul_vec5() {
+        let mat = SymmetricMat5::from_outer_product(Vec3::new(1.0, 2.0, 3.0), Vec2::new(4.0, 5.0));
 
-        // Known solution x= (x1, x2)
-        let x1 = Vec3::new(1.0, 2.0, 3.0);
-        let x2 = Vec3::new(4.0, 5.0, 6.0);
+        let (res1, res2) = mat.mul_vec5(Vec3::new(1.0, 2.0, 3.0), Vec2::new(4.0, 5.0));
 
-        // Compute rhs = mat * x
-        let (rhs1, rhs2) = mat.mul_vec6(x1, x2);
-        assert_eq!(rhs1, Vec3::new(25.0, 12.0, 33.0));
-        assert_eq!(rhs2, Vec3::new(77.0, 2.0, 89.0));
-
-        // Solve
-        let (sol1, sol2) = mat.ldlt_solve(rhs1, rhs2);
-
-        // Check solution
-        assert_relative_eq!(sol1, x1, epsilon = 1e-4);
-        assert_relative_eq!(sol2, x2, epsilon = 1e-4);
+        assert_eq!(res1, vec3(55.0, 110.0, 165.0));
+        assert_eq!(res2, vec2(220.0, 275.0));
     }
 
     #[test]
-    fn ldlt_solve_identity() {
-        let mat = SymmetricMat6::IDENTITY;
+    fn inverse() {
+        let a = SymmetricMat3::new(1.0, 6.0, 7.0, 2.0, 10.0, 3.0);
+        let b = Mat23::from_cols(vec2(8.0, 9.0), vec2(11.0, 12.0), vec2(13.0, 14.0));
+        let d = SymmetricMat2::new(4.0, 15.0, 5.0);
+        let mat = SymmetricMat5 { a, b, d };
 
-        // Known solution x= (x1, x2)
-        let x1 = Vec3::new(7.0, -3.0, 2.5);
-        let x2 = Vec3::new(-1.0, 4.5, 0.0);
+        // Known solution x = (x1, x2)
+        let x1 = Vec3::new(1.0, 2.0, 3.0);
+        let x2 = Vec2::new(4.0, 5.0);
 
         // Compute rhs = mat * x
-        let (rhs1, rhs2) = mat.mul_vec6(x1, x2);
+        let (rhs1, rhs2) = mat.mul_vec5(x1, x2);
 
         // Solve
-        let (sol1, sol2) = mat.ldlt_solve(rhs1, rhs2);
+        let (sol1, sol2) = mat.inverse().mul_vec5(rhs1, rhs2);
 
         // Check solution
-        assert_relative_eq!(sol1, x1, epsilon = 1e-6);
-        assert_relative_eq!(sol2, x2, epsilon = 1e-6);
+        assert_relative_eq!(sol1, x1, epsilon = 1e-5);
+        assert_relative_eq!(sol2, x2, epsilon = 1e-5);
     }
 }

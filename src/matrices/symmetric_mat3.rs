@@ -9,6 +9,11 @@ use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::Re
 
 use crate::{MatConversionError, SquareMatExt, ops::FloatAbs};
 
+#[cfg(feature = "f64")]
+use crate::matrices::{DMat23, DMat32};
+#[cfg(feature = "f32")]
+use crate::matrices::{Mat23, Mat32};
+
 /// An extension trait for 3x3 matrices.
 pub trait Mat3Ext {
     /// The type of the symmetric 3x3 matrix.
@@ -39,7 +44,7 @@ impl Mat3Ext for DMat3 {
 }
 
 macro_rules! symmetric_mat3s {
-    ($($n:ident => $nonsymmetricn:ident, $v2t:ident, $vt:ident, $t:ident),+) => {
+    ($($n:ident => $nonsymmetricn:ident, $m23t:ident, $m32t:ident, $v2t:ident, $vt:ident, $t:ident),+) => {
         $(
         /// The bottom left triangle (including the diagonal) of a symmetric 3x3 column-major matrix.
         ///
@@ -483,6 +488,45 @@ macro_rules! symmetric_mat3s {
             #[must_use]
             pub fn mul_mat3(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
                 self.mul(rhs)
+            }
+
+            /// Multiplies `self` by a 3x2 matrix, `self * rhs`.
+            #[inline]
+            #[must_use]
+            pub fn mul_mat32(&self, rhs: &$m32t) -> $m32t {
+                self.mul(rhs)
+            }
+
+            /// Computes `a * transpose(b)`, assuming `a = b * M` for some symmetric matrix `M`.
+            ///
+            /// This effectively completes the second half of the sandwich product `b * M * transpose(b)`.
+            #[inline]
+            #[must_use]
+            pub fn complete_mat23_sandwich(a: &$m23t, b: &$m23t) -> Self {
+                Self::new(
+                    a.col(0).dot(b.col(0)),
+                    a.col(1).dot(b.col(0)),
+                    a.col(2).dot(b.col(0)),
+                    a.col(1).dot(b.col(1)),
+                    a.col(2).dot(b.col(1)),
+                    a.col(2).dot(b.col(2)),
+                )
+            }
+
+            /// Computes `a * transpose(b)`, assuming `a = b * M` for some symmetric matrix `M`.
+            ///
+            /// This effectively completes the second half of the sandwich product `b * M * transpose(b)`.
+            #[inline]
+            #[must_use]
+            pub fn complete_mat32_sandwich(a: &$m32t, b: &$m32t) -> Self {
+                Self::new(
+                    a.row(0).dot(b.row(0)),
+                    a.row(1).dot(b.row(0)),
+                    a.row(2).dot(b.row(0)),
+                    a.row(1).dot(b.row(1)),
+                    a.row(2).dot(b.row(1)),
+                    a.row(2).dot(b.row(2)),
+                )
             }
 
             /// Adds two 3x3 matrices.
@@ -976,6 +1020,49 @@ macro_rules! symmetric_mat3s {
             }
         }
 
+        impl Mul<$m32t> for $n {
+            type Output = $m32t;
+            #[inline]
+            fn mul(self, rhs: $m32t) -> Self::Output {
+                $m32t::from_cols(
+                    $vt::new(
+                        self.row(0).dot(rhs.x_axis),
+                        self.row(1).dot(rhs.x_axis),
+                        self.row(2).dot(rhs.x_axis),
+                    ),
+                    $vt::new(
+                        self.row(0).dot(rhs.y_axis),
+                        self.row(1).dot(rhs.y_axis),
+                        self.row(2).dot(rhs.y_axis),
+                    ),
+                )
+            }
+        }
+
+        impl Mul<&$m32t> for $n {
+            type Output = $m32t;
+            #[inline]
+            fn mul(self, rhs: &$m32t) -> Self::Output {
+                self.mul(*rhs)
+            }
+        }
+
+        impl Mul<$m32t> for &$n {
+            type Output = $m32t;
+            #[inline]
+            fn mul(self, rhs: $m32t) -> Self::Output {
+                (*self).mul(rhs)
+            }
+        }
+
+        impl Mul<&$m32t> for &$n {
+            type Output = $m32t;
+            #[inline]
+            fn mul(self, rhs: &$m32t) -> Self::Output {
+                (*self).mul(*rhs)
+            }
+        }
+
         impl Mul<$vt> for $n {
             type Output = $vt;
             #[inline]
@@ -1307,10 +1394,10 @@ impl Mul<Vec3A> for SymmetricMat3 {
 }
 
 #[cfg(feature = "f32")]
-symmetric_mat3s!(SymmetricMat3 => Mat3, Vec2, Vec3, f32);
+symmetric_mat3s!(SymmetricMat3 => Mat3, Mat23, Mat32, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat3s!(DSymmetricMat3 => DMat3, DVec2, DVec3, f64);
+symmetric_mat3s!(DSymmetricMat3 => DMat3, DMat23, DMat32, DVec2, DVec3, f64);
 
 #[cfg(test)]
 mod tests {
@@ -1321,17 +1408,17 @@ mod tests {
 
     #[test]
     fn ldlt_solve() {
-        let sym3 = SymmetricMat3::new(4.0, 1.0, 5.0, 0.0, 2.0, 6.0);
+        let mat = SymmetricMat3::new(4.0, 1.0, 5.0, 0.0, 2.0, 6.0);
 
         // Known solution x
         let x = Vec3::new(1.0, 2.0, 3.0);
 
-        // Compute rhs = A * x
-        let rhs = sym3.mul_vec3(x);
+        // Compute rhs = mat * x
+        let rhs = mat.mul_vec3(x);
         assert_eq!(rhs, Vec3::new(21.0, 7.0, 27.0));
 
         // Solve
-        let sol = sym3.ldlt_solve(rhs);
+        let sol = mat.ldlt_solve(rhs);
 
         // Check solution
         assert_relative_eq!(sol, x, epsilon = 1e-4);
@@ -1339,16 +1426,16 @@ mod tests {
 
     #[test]
     fn ldlt_solve_identity() {
-        let sym3 = SymmetricMat3::IDENTITY;
+        let mat = SymmetricMat3::IDENTITY;
 
         // Known solution x
         let x = Vec3::new(7.0, -3.0, 2.5);
 
-        // Compute rhs = A * x
-        let rhs = sym3.mul_vec3(x);
+        // Compute rhs = mat * x
+        let rhs = mat.mul_vec3(x);
 
         // Solve
-        let sol = sym3.ldlt_solve(rhs);
+        let sol = mat.ldlt_solve(rhs);
 
         // Check solution
         assert_relative_eq!(sol, x, epsilon = 1e-6);

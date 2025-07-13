@@ -9,12 +9,12 @@ use glam::{Mat2, Mat3, Vec2, Vec3};
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 #[cfg(feature = "f64")]
-use crate::matrices::mat23::DMat23;
+use crate::matrices::{DMat23, DSymmetricMat2};
 #[cfg(feature = "f32")]
-use crate::matrices::mat23::Mat23;
+use crate::matrices::{Mat23, SymmetricMat2};
 
 macro_rules! mat32s {
-    ($($n:ident => $m23t:ident, $m2t:ident, $m3t:ident, $v2t:ident, $v3t:ident, $t:ident),+) => {
+    ($($n:ident => $m23t:ident, $symmetricm2t:ident, $m2t:ident, $m3t:ident, $v2t:ident, $v3t:ident, $t:ident),+) => {
         $(
         /// A 3x2 column-major matrix.
         #[derive(Clone, Copy, PartialEq)]
@@ -167,6 +167,16 @@ macro_rules! mat32s {
                 )
             }
 
+            /// Creates a new 3x2 matrix from the outer product `a * b^T`.
+            #[inline(always)]
+            #[must_use]
+            pub fn from_outer_product(a: $v3t, b: $v2t) -> Self {
+                Self::from_cols(
+                    $v3t::new(a.x * b.x, a.y * b.x, a.z * b.x),
+                    $v3t::new(a.x * b.y, a.y * b.y, a.z * b.y),
+                )
+            }
+
             /// Returns the matrix column for the given `index`.
             ///
             /// # Panics
@@ -242,6 +252,13 @@ macro_rules! mat32s {
             #[inline]
             #[must_use]
             pub fn mul_mat2(&self, rhs: &$m2t) -> Self {
+                self.mul(rhs)
+            }
+
+            /// Multiplies `self` by a symmetric 2x2 matrix, `self * rhs`.
+            #[inline]
+            #[must_use]
+            pub fn mul_symmetric_mat2(&self, rhs: &$symmetricm2t) -> Self {
                 self.mul(rhs)
             }
 
@@ -458,6 +475,49 @@ macro_rules! mat32s {
             type Output = $n;
             #[inline]
             fn mul(self, rhs: &$m2t) -> Self::Output {
+                (*self).mul(*rhs)
+            }
+        }
+
+        impl Mul<$symmetricm2t> for $n {
+            type Output = Self;
+            #[inline]
+            fn mul(self, rhs: $symmetricm2t) -> Self::Output {
+                Self::from_cols(
+                    $v3t::new(
+                        self.row(0).dot(rhs.col(0)),
+                        self.row(1).dot(rhs.col(0)),
+                        self.row(2).dot(rhs.col(0)),
+                    ),
+                    $v3t::new(
+                        self.row(0).dot(rhs.col(1)),
+                        self.row(1).dot(rhs.col(1)),
+                        self.row(2).dot(rhs.col(1)),
+                    ),
+                )
+            }
+        }
+
+        impl Mul<&$symmetricm2t> for $n {
+            type Output = Self;
+            #[inline]
+            fn mul(self, rhs: &$symmetricm2t) -> Self::Output {
+                self.mul(*rhs)
+            }
+        }
+
+        impl Mul<$symmetricm2t> for &$n {
+            type Output = $n;
+            #[inline]
+            fn mul(self, rhs: $symmetricm2t) -> Self::Output {
+                (*self).mul(rhs)
+            }
+        }
+
+        impl Mul<&$symmetricm2t> for &$n {
+            type Output = $n;
+            #[inline]
+            fn mul(self, rhs: &$symmetricm2t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
@@ -797,10 +857,10 @@ macro_rules! mat32s {
 }
 
 #[cfg(feature = "f32")]
-mat32s!(Mat32 => Mat23, Mat2, Mat3, Vec2, Vec3, f32);
+mat32s!(Mat32 => Mat23, SymmetricMat2, Mat2, Mat3, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-mat32s!(DMat32 => DMat23, DMat2, DMat3, DVec2, DVec3, f64);
+mat32s!(DMat32 => DMat23, DSymmetricMat2, DMat2, DMat3, DVec2, DVec3, f64);
 
 #[cfg(test)]
 mod tests {

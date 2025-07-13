@@ -7,6 +7,10 @@ use glam::{Mat2, Vec2};
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
+#[cfg(feature = "f64")]
+use crate::{DMat23, DMat32};
+#[cfg(feature = "f32")]
+use crate::{Mat23, Mat32};
 use crate::{MatConversionError, SquareMatExt, ops::FloatAbs};
 
 /// An extension trait for 2x2 matrices.
@@ -39,7 +43,7 @@ impl Mat2Ext for DMat2 {
 }
 
 macro_rules! symmetric_mat2s {
-    ($($n:ident => $nonsymmetricn:ident, $vt:ident, $t:ident),+) => {
+    ($($n:ident => $nonsymmetricn:ident, $m23t:ident, $m32t:ident, $vt:ident, $t:ident),+) => {
         $(
         /// The bottom left triangle (including the diagonal) of a symmetric 2x2 column-major matrix.
         ///
@@ -205,6 +209,13 @@ macro_rules! symmetric_mat2s {
                 $nonsymmetricn::from_cols_array(&self.to_cols_array())
             }
 
+            /// Creates a new symmetric 2x2 matrix from the outer product `v * v^T`.
+            #[inline(always)]
+            #[must_use]
+            pub fn from_outer_product(v: $vt) -> Self {
+                Self::new(v.x * v.x, v.x * v.y, v.y * v.y)
+            }
+
             /// Returns the matrix column for the given `index`.
             ///
             /// # Panics
@@ -325,6 +336,39 @@ macro_rules! symmetric_mat2s {
             #[must_use]
             pub fn mul_mat2(&self, rhs: &$nonsymmetricn) -> $nonsymmetricn {
                 self.mul(rhs)
+            }
+
+            /// Multiplies `self` by a 2x3 matrix, `self * rhs`.
+            #[inline]
+            #[must_use]
+            pub fn mul_mat23(&self, rhs: &$m23t) -> $m23t {
+                self.mul(rhs)
+            }
+
+            /// Computes `a * transpose(b)`, assuming `a = b * M` for some symmetric matrix `M`.
+            ///
+            /// This effectively completes the second half of the sandwich product `b * M * transpose(b)`.
+            #[inline]
+            #[must_use]
+            pub fn complete_mat23_sandwich(a: &$m23t, b: &$m23t) -> Self {
+                Self::new(
+                    a.row(0).dot(b.row(0)),
+                    a.row(1).dot(b.row(0)),
+                    a.row(1).dot(b.row(1)),
+                )
+            }
+
+            /// Computes `a * transpose(b)`, assuming `a = b * M` for some symmetric matrix `M`.
+            ///
+            /// This effectively completes the second half of the sandwich product `b * M * transpose(b)`.
+            #[inline]
+            #[must_use]
+            pub fn complete_mat32_sandwich(a: &$m32t, b: &$m32t) -> Self {
+                Self::new(
+                    a.col(0).dot(b.col(0)),
+                    a.col(1).dot(b.col(0)),
+                    a.col(1).dot(b.col(1)),
+                )
             }
 
             /// Adds two 2x2 matrices.
@@ -783,6 +827,51 @@ macro_rules! symmetric_mat2s {
             }
         }
 
+        impl Mul<$m23t> for $n {
+            type Output = $m23t;
+            #[inline]
+            fn mul(self, rhs: $m23t) -> Self::Output {
+                $m23t::from_cols(
+                    $vt::new(
+                        self.row(0).dot(rhs.x_axis),
+                        self.row(1).dot(rhs.x_axis),
+                    ),
+                    $vt::new(
+                        self.row(0).dot(rhs.y_axis),
+                        self.row(1).dot(rhs.y_axis),
+                    ),
+                    $vt::new(
+                        self.row(0).dot(rhs.z_axis),
+                        self.row(1).dot(rhs.z_axis),
+                    ),
+                )
+            }
+        }
+
+        impl Mul<&$m23t> for $n {
+            type Output = $m23t;
+            #[inline]
+            fn mul(self, rhs: &$m23t) -> Self::Output {
+                self.mul(*rhs)
+            }
+        }
+
+        impl Mul<$m23t> for &$n {
+            type Output = $m23t;
+            #[inline]
+            fn mul(self, rhs: $m23t) -> Self::Output {
+                (*self).mul(rhs)
+            }
+        }
+
+        impl Mul<&$m23t> for &$n {
+            type Output = $m23t;
+            #[inline]
+            fn mul(self, rhs: &$m23t) -> Self::Output {
+                (*self).mul(*rhs)
+            }
+        }
+
         impl Mul<$vt> for $n {
             type Output = $vt;
             #[inline]
@@ -1079,7 +1168,7 @@ macro_rules! symmetric_mat2s {
 }
 
 #[cfg(feature = "f32")]
-symmetric_mat2s!(SymmetricMat2 => Mat2, Vec2, f32);
+symmetric_mat2s!(SymmetricMat2 => Mat2, Mat23, Mat32, Vec2, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat2s!(DSymmetricMat2 => DMat2, DVec2, f64);
+symmetric_mat2s!(DSymmetricMat2 => DMat2, DMat23, DMat32, DVec2, f64);
