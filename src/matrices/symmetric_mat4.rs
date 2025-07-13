@@ -114,6 +114,7 @@ macro_rules! symmetric_mat4s {
             /// and `R` is the row index.
             #[inline(always)]
             #[must_use]
+            #[expect(clippy::too_many_arguments, reason = "It's important to have a raw constructor for this.")]
             pub const fn new(
                 m00: $t,
                 m01: $t,
