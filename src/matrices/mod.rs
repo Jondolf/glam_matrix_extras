@@ -6,6 +6,7 @@ mod mat23;
 mod mat32;
 mod symmetric_mat2;
 mod symmetric_mat3;
+mod symmetric_mat4;
 mod symmetric_mat6;
 
 #[cfg(feature = "f64")]
@@ -26,6 +27,11 @@ pub use symmetric_mat3::DSymmetricMat3;
 pub use symmetric_mat3::Mat3Ext;
 #[cfg(feature = "f32")]
 pub use symmetric_mat3::SymmetricMat3;
+#[cfg(feature = "f64")]
+pub use symmetric_mat4::DSymmetricMat4;
+pub use symmetric_mat4::Mat4Ext;
+#[cfg(feature = "f32")]
+pub use symmetric_mat4::SymmetricMat4;
 #[cfg(feature = "f64")]
 pub use symmetric_mat6::DSymmetricMat6;
 #[cfg(feature = "f32")]
