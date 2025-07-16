@@ -655,6 +655,7 @@ symmetric_mat6s!(SymmetricMat6 => SymmetricMat3, Mat3, Vec3, f32);
 #[cfg(feature = "f64")]
 symmetric_mat6s!(SymmetricDMat6 => SymmetricDMat3, DMat3, DVec3, f64);
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl SymmetricMat6 {
     /// Returns the double precision version of `self`.
     #[inline]
@@ -668,6 +669,7 @@ impl SymmetricMat6 {
     }
 }
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl SymmetricDMat6 {
     /// Returns the single precision version of `self`.
     #[inline]

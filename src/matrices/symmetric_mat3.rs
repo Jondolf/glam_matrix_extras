@@ -1425,6 +1425,7 @@ symmetric_mat3s!(SymmetricMat3 => Mat3, Mat23, Mat32, Vec2, Vec3, f32);
 #[cfg(feature = "f64")]
 symmetric_mat3s!(SymmetricDMat3 => DMat3, DMat23, DMat32, DVec2, DVec3, f64);
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl SymmetricMat3 {
     /// Returns the double precision version of `self`.
     #[inline]
@@ -1441,6 +1442,7 @@ impl SymmetricMat3 {
     }
 }
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl SymmetricDMat3 {
     /// Returns the single precision version of `self`.
     #[inline]

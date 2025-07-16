@@ -862,6 +862,7 @@ mat32s!(Mat32 => Mat23, SymmetricMat2, Mat2, Mat3, Vec2, Vec3, f32);
 #[cfg(feature = "f64")]
 mat32s!(DMat32 => DMat23, SymmetricDMat2, DMat2, DMat3, DVec2, DVec3, f64);
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl Mat32 {
     /// Returns the double precision version of `self`.
     #[inline]
@@ -874,6 +875,7 @@ impl Mat32 {
     }
 }
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl DMat32 {
     /// Returns the single precision version of `self`.
     #[inline]
