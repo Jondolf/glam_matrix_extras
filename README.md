@@ -11,11 +11,11 @@ Matrix types and utilities for [`glam`].
   - [x] 2x3 matrices: `Mat23`, `DMat23`
   - [x] 3x2 matrices: `Mat32`, `DMat32`
 - Symmetric matrices
-  - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `DSymmetricMat2`
-  - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `DSymmetricMat3`
-  - [x] Symmetric 4x4 matrices: `SymmetricMat4`, `DSymmetricMat4`
-  - [x] Symmetric 5x5 matrices: `SymmetricMat5`, `DSymmetricMat5`
-  - [x] Symmetric 6x6 matrices: `SymmetricMat6`, `DSymmetricMat6`
+  - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `SymmetricDMat2`
+  - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `SymmetricDMat3`
+  - [x] Symmetric 4x4 matrices: `SymmetricMat4`, `SymmetricDMat4`
+  - [x] Symmetric 5x5 matrices: `SymmetricMat5`, `SymmetricDMat5`
+  - [x] Symmetric 6x6 matrices: `SymmetricMat6`, `SymmetricDMat6`
 - Eigen decompositions of symmetric matrices
   - [x] 2D: `SymmetricEigen2`
   - [x] 3D: `SymmetricEigen3`

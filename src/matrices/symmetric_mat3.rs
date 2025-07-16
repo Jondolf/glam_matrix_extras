@@ -21,6 +21,12 @@ pub trait Mat3Ext {
 
     /// Multiplies `self` by a symmetric 3x3 matrix.
     fn mul_symmetric_mat3(&self, rhs: &Self::SymmetricMat3) -> Self;
+
+    /// Adds a symmetric 3x3 matrix to `self`.
+    fn add_symmetric_mat3(&self, rhs: &Self::SymmetricMat3) -> Self;
+
+    /// Subtracts a symmetric 3x3 matrix from `self`.
+    fn sub_symmetric_mat3(&self, rhs: &Self::SymmetricMat3) -> Self;
 }
 
 #[cfg(feature = "f32")]
@@ -31,15 +37,35 @@ impl Mat3Ext for Mat3 {
     fn mul_symmetric_mat3(&self, rhs: &SymmetricMat3) -> Mat3 {
         self.mul(rhs)
     }
+
+    #[inline]
+    fn add_symmetric_mat3(&self, rhs: &SymmetricMat3) -> Mat3 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat3(&self, rhs: &SymmetricMat3) -> Mat3 {
+        self.sub(rhs)
+    }
 }
 
 #[cfg(feature = "f64")]
 impl Mat3Ext for DMat3 {
-    type SymmetricMat3 = DSymmetricMat3;
+    type SymmetricMat3 = SymmetricDMat3;
 
     #[inline]
-    fn mul_symmetric_mat3(&self, rhs: &DSymmetricMat3) -> DMat3 {
+    fn mul_symmetric_mat3(&self, rhs: &SymmetricDMat3) -> DMat3 {
         self.mul(rhs)
+    }
+
+    #[inline]
+    fn add_symmetric_mat3(&self, rhs: &SymmetricDMat3) -> DMat3 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat3(&self, rhs: &SymmetricDMat3) -> DMat3 {
+        self.sub(rhs)
     }
 }
 
@@ -543,21 +569,21 @@ macro_rules! symmetric_mat3s {
                 self.sub(rhs)
             }
 
-            /// Multiplies two 3x3 matrices.
+            /// Multiplies two symmetric 3x3 matrices.
             #[inline]
             #[must_use]
             pub fn mul_symmetric_mat3(&self, rhs: &Self) -> $nonsymmetricn {
                 self.mul(rhs)
             }
 
-            /// Adds two 3x3 matrices.
+            /// Adds two symmetric 3x3 matrices.
             #[inline]
             #[must_use]
             pub fn add_symmetric_mat3(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 3x3 matrices.
+            /// Subtracts two symmetric 3x3 matrices.
             #[inline]
             #[must_use]
             pub fn sub_symmetric_mat3(&self, rhs: &Self) -> Self {
@@ -1254,7 +1280,7 @@ macro_rules! symmetric_mat3s {
         impl From<$n> for $nonsymmetricn {
             #[inline]
             fn from(mat: $n) -> Self {
-                Self::from_cols(mat.col(0), mat.col(1), mat.col(2))
+                mat.to_mat3()
             }
         }
 
@@ -1397,7 +1423,7 @@ impl Mul<Vec3A> for SymmetricMat3 {
 symmetric_mat3s!(SymmetricMat3 => Mat3, Mat23, Mat32, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat3s!(DSymmetricMat3 => DMat3, DMat23, DMat32, DVec2, DVec3, f64);
+symmetric_mat3s!(SymmetricDMat3 => DMat3, DMat23, DMat32, DVec2, DVec3, f64);
 
 #[cfg(test)]
 mod tests {

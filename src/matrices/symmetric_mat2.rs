@@ -20,6 +20,12 @@ pub trait Mat2Ext {
 
     /// Multiplies `self` by a symmetric 2x2 matrix.
     fn mul_symmetric_mat2(&self, rhs: &Self::SymmetricMat2) -> Self;
+
+    /// Adds a symmetric 2x2 matrix to `self`.
+    fn add_symmetric_mat2(&self, rhs: &Self::SymmetricMat2) -> Self;
+
+    /// Subtracts a symmetric 2x2 matrix from `self`.
+    fn sub_symmetric_mat2(&self, rhs: &Self::SymmetricMat2) -> Self;
 }
 
 #[cfg(feature = "f32")]
@@ -30,15 +36,35 @@ impl Mat2Ext for Mat2 {
     fn mul_symmetric_mat2(&self, rhs: &SymmetricMat2) -> Mat2 {
         self.mul(rhs)
     }
+
+    #[inline]
+    fn add_symmetric_mat2(&self, rhs: &SymmetricMat2) -> Mat2 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat2(&self, rhs: &SymmetricMat2) -> Mat2 {
+        self.sub(rhs)
+    }
 }
 
 #[cfg(feature = "f64")]
 impl Mat2Ext for DMat2 {
-    type SymmetricMat2 = DSymmetricMat2;
+    type SymmetricMat2 = SymmetricDMat2;
 
     #[inline]
-    fn mul_symmetric_mat2(&self, rhs: &DSymmetricMat2) -> DMat2 {
+    fn mul_symmetric_mat2(&self, rhs: &SymmetricDMat2) -> DMat2 {
         self.mul(rhs)
+    }
+
+    #[inline]
+    fn add_symmetric_mat2(&self, rhs: &SymmetricDMat2) -> DMat2 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat2(&self, rhs: &SymmetricDMat2) -> DMat2 {
+        self.sub(rhs)
     }
 }
 
@@ -205,7 +231,7 @@ macro_rules! symmetric_mat2s {
             /// Creates a 2x2 matrix from the symmetric 2x2 matrix in `self`.
             #[inline]
             #[must_use]
-            pub const fn to_mat3(&self) -> $nonsymmetricn {
+            pub const fn to_mat2(&self) -> $nonsymmetricn {
                 $nonsymmetricn::from_cols_array(&self.to_cols_array())
             }
 
@@ -385,21 +411,21 @@ macro_rules! symmetric_mat2s {
                 self.sub(rhs)
             }
 
-            /// Multiplies two 2x2 matrices.
+            /// Multiplies two symmetric 2x2 matrices.
             #[inline]
             #[must_use]
             pub fn mul_symmetric_mat2(&self, rhs: &Self) -> $nonsymmetricn {
                 self.mul(rhs)
             }
 
-            /// Adds two 2x2 matrices.
+            /// Adds two symmetric 2x2 matrices.
             #[inline]
             #[must_use]
             pub fn add_symmetric_mat2(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 2x2 matrices.
+            /// Subtracts two symmetric 2x2 matrices.
             #[inline]
             #[must_use]
             pub fn sub_symmetric_mat2(&self, rhs: &Self) -> Self {
@@ -1063,7 +1089,7 @@ macro_rules! symmetric_mat2s {
         impl From<$n> for $nonsymmetricn {
             #[inline]
             fn from(mat: $n) -> Self {
-                Self::from_cols(mat.col(0), mat.col(1))
+                mat.to_mat2()
             }
         }
 
@@ -1171,4 +1197,4 @@ macro_rules! symmetric_mat2s {
 symmetric_mat2s!(SymmetricMat2 => Mat2, Mat23, Mat32, Vec2, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat2s!(DSymmetricMat2 => DMat2, DMat23, DMat32, DVec2, f64);
+symmetric_mat2s!(SymmetricDMat2 => DMat2, DMat23, DMat32, DVec2, f64);

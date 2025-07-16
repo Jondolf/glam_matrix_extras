@@ -9,7 +9,7 @@ use glam::{Mat2, Mat3, Vec2, Vec3};
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 #[cfg(feature = "f64")]
-use crate::matrices::{DMat23, DSymmetricMat2};
+use crate::matrices::{DMat23, SymmetricDMat2};
 #[cfg(feature = "f32")]
 use crate::matrices::{Mat23, SymmetricMat2};
 
@@ -860,7 +860,7 @@ macro_rules! mat32s {
 mat32s!(Mat32 => Mat23, SymmetricMat2, Mat2, Mat3, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-mat32s!(DMat32 => DMat23, DSymmetricMat2, DMat2, DMat3, DVec2, DVec3, f64);
+mat32s!(DMat32 => DMat23, SymmetricDMat2, DMat2, DMat3, DVec2, DVec3, f64);
 
 #[cfg(test)]
 mod tests {

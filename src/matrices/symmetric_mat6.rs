@@ -8,7 +8,7 @@ use glam::{Mat3, Vec3};
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 #[cfg(feature = "f64")]
-use crate::DSymmetricMat3;
+use crate::SymmetricDMat3;
 use crate::SquareMatExt;
 #[cfg(feature = "f32")]
 use crate::SymmetricMat3;
@@ -205,14 +205,14 @@ macro_rules! symmetric_mat6s {
                 (x1, x2)
             }
 
-            /// Adds two 6x6 matrices.
+            /// Adds two symmetric 6x6 matrices.
             #[inline]
             #[must_use]
             pub fn add_symmetric_mat6(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 6x6 matrices.
+            /// Subtracts two symmetric 6x6 matrices.
             #[inline]
             #[must_use]
             pub fn sub_symmetric_mat6(&self, rhs: &Self) -> Self {
@@ -653,7 +653,7 @@ macro_rules! symmetric_mat6s {
 symmetric_mat6s!(SymmetricMat6 => SymmetricMat3, Mat3, Vec3, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat6s!(DSymmetricMat6 => DSymmetricMat3, DMat3, DVec3, f64);
+symmetric_mat6s!(SymmetricDMat6 => SymmetricDMat3, DMat3, DVec3, f64);
 
 #[cfg(test)]
 mod tests {

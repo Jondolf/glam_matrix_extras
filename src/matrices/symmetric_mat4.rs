@@ -16,6 +16,12 @@ pub trait Mat4Ext {
 
     /// Multiplies `self` by a symmetric 4x4 matrix.
     fn mul_symmetric_mat4(&self, rhs: &Self::SymmetricMat4) -> Self;
+
+    /// Adds a symmetric 4x4 matrix to `self`.
+    fn add_symmetric_mat4(&self, rhs: &Self::SymmetricMat4) -> Self;
+
+    /// Subtracts a symmetric 4x4 matrix from `self`.
+    fn sub_symmetric_mat4(&self, rhs: &Self::SymmetricMat4) -> Self;
 }
 
 #[cfg(feature = "f32")]
@@ -26,15 +32,35 @@ impl Mat4Ext for Mat4 {
     fn mul_symmetric_mat4(&self, rhs: &SymmetricMat4) -> Mat4 {
         self.mul(rhs)
     }
+
+    #[inline]
+    fn add_symmetric_mat4(&self, rhs: &SymmetricMat4) -> Mat4 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat4(&self, rhs: &SymmetricMat4) -> Mat4 {
+        self.sub(rhs)
+    }
 }
 
 #[cfg(feature = "f64")]
 impl Mat4Ext for DMat4 {
-    type SymmetricMat4 = DSymmetricMat4;
+    type SymmetricMat4 = SymmetricDMat4;
 
     #[inline]
-    fn mul_symmetric_mat4(&self, rhs: &DSymmetricMat4) -> DMat4 {
+    fn mul_symmetric_mat4(&self, rhs: &SymmetricDMat4) -> DMat4 {
         self.mul(rhs)
+    }
+
+    #[inline]
+    fn add_symmetric_mat4(&self, rhs: &SymmetricDMat4) -> DMat4 {
+        self.add(rhs)
+    }
+
+    #[inline]
+    fn sub_symmetric_mat4(&self, rhs: &SymmetricDMat4) -> DMat4 {
+        self.sub(rhs)
     }
 }
 
@@ -565,21 +591,21 @@ macro_rules! symmetric_mat4s {
                 self.sub(rhs)
             }
 
-            /// Multiplies two 4x4 matrices.
+            /// Multiplies two symmetric 4x4 matrices.
             #[inline]
             #[must_use]
             pub fn mul_symmetric_mat4(&self, rhs: &Self) -> $nonsymmetricn {
                 self.mul(rhs)
             }
 
-            /// Adds two 4x4 matrices.
+            /// Adds two symmetric 4x4 matrices.
             #[inline]
             #[must_use]
             pub fn add_symmetric_mat4(&self, rhs: &Self) -> Self {
                 self.add(rhs)
             }
 
-            /// Subtracts two 4x4 matrices.
+            /// Subtracts two symmetric 4x4 matrices.
             #[inline]
             #[must_use]
             pub fn sub_symmetric_mat4(&self, rhs: &Self) -> Self {
@@ -1266,7 +1292,7 @@ macro_rules! symmetric_mat4s {
         impl From<$n> for $nonsymmetricn {
             #[inline]
             fn from(mat: $n) -> Self {
-                Self::from_cols(mat.col(0), mat.col(1), mat.col(2), mat.col(3))
+                mat.to_mat4()
             }
         }
 
@@ -1408,7 +1434,7 @@ macro_rules! symmetric_mat4s {
 symmetric_mat4s!(SymmetricMat4 => Mat4, Vec4, f32);
 
 #[cfg(feature = "f64")]
-symmetric_mat4s!(DSymmetricMat4 => DMat4, DVec4, f64);
+symmetric_mat4s!(SymmetricDMat4 => DMat4, DVec4, f64);
 
 #[cfg(test)]
 mod tests {
