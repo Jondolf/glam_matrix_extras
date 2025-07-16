@@ -1425,6 +1425,38 @@ symmetric_mat3s!(SymmetricMat3 => Mat3, Mat23, Mat32, Vec2, Vec3, f32);
 #[cfg(feature = "f64")]
 symmetric_mat3s!(SymmetricDMat3 => DMat3, DMat23, DMat32, DVec2, DVec3, f64);
 
+impl SymmetricMat3 {
+    /// Returns the double precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_dmat3(&self) -> SymmetricDMat3 {
+        SymmetricDMat3 {
+            m00: self.m00 as f64,
+            m01: self.m01 as f64,
+            m02: self.m02 as f64,
+            m11: self.m11 as f64,
+            m12: self.m12 as f64,
+            m22: self.m22 as f64,
+        }
+    }
+}
+
+impl SymmetricDMat3 {
+    /// Returns the single precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_mat3(&self) -> SymmetricMat3 {
+        SymmetricMat3 {
+            m00: self.m00 as f32,
+            m01: self.m01 as f32,
+            m02: self.m02 as f32,
+            m11: self.m11 as f32,
+            m12: self.m12 as f32,
+            m22: self.m22 as f32,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;

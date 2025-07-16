@@ -609,6 +609,32 @@ symmetric_mat5s!(SymmetricMat5 => SymmetricMat2, SymmetricMat3, Mat23, Vec2, Vec
 #[cfg(feature = "f64")]
 symmetric_mat5s!(SymmetricDMat5 => SymmetricDMat2, SymmetricDMat3, DMat23, DVec2, DVec3, f64);
 
+impl SymmetricMat5 {
+    /// Returns the double precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_dmat5(&self) -> SymmetricDMat5 {
+        SymmetricDMat5 {
+            a: self.a.as_symmetric_dmat3(),
+            b: self.b.as_dmat23(),
+            d: self.d.as_symmetric_dmat2(),
+        }
+    }
+}
+
+impl SymmetricDMat5 {
+    /// Returns the single precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_mat5(&self) -> SymmetricMat5 {
+        SymmetricMat5 {
+            a: self.a.as_symmetric_mat3(),
+            b: self.b.as_mat23(),
+            d: self.d.as_symmetric_mat2(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;

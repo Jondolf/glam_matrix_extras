@@ -1198,3 +1198,29 @@ symmetric_mat2s!(SymmetricMat2 => Mat2, Mat23, Mat32, Vec2, f32);
 
 #[cfg(feature = "f64")]
 symmetric_mat2s!(SymmetricDMat2 => DMat2, DMat23, DMat32, DVec2, f64);
+
+impl SymmetricMat2 {
+    /// Returns the double precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_dmat2(&self) -> SymmetricDMat2 {
+        SymmetricDMat2 {
+            m00: self.m00 as f64,
+            m01: self.m01 as f64,
+            m11: self.m11 as f64,
+        }
+    }
+}
+
+impl SymmetricDMat2 {
+    /// Returns the single precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_mat2(&self) -> SymmetricMat2 {
+        SymmetricMat2 {
+            m00: self.m00 as f32,
+            m01: self.m01 as f32,
+            m11: self.m11 as f32,
+        }
+    }
+}

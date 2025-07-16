@@ -862,6 +862,30 @@ mat32s!(Mat32 => Mat23, SymmetricMat2, Mat2, Mat3, Vec2, Vec3, f32);
 #[cfg(feature = "f64")]
 mat32s!(DMat32 => DMat23, SymmetricDMat2, DMat2, DMat3, DVec2, DVec3, f64);
 
+impl Mat32 {
+    /// Returns the double precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_dmat32(&self) -> DMat32 {
+        DMat32 {
+            x_axis: self.x_axis.as_dvec3(),
+            y_axis: self.y_axis.as_dvec3(),
+        }
+    }
+}
+
+impl DMat32 {
+    /// Returns the single precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_mat32(&self) -> Mat32 {
+        Mat32 {
+            x_axis: self.x_axis.as_vec3(),
+            y_axis: self.y_axis.as_vec3(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use glam::{Mat2, Mat3, vec2, vec3};

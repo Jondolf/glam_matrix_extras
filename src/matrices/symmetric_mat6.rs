@@ -7,9 +7,9 @@ use glam::{Mat3, Vec3};
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
+use crate::SquareMatExt;
 #[cfg(feature = "f64")]
 use crate::SymmetricDMat3;
-use crate::SquareMatExt;
 #[cfg(feature = "f32")]
 use crate::SymmetricMat3;
 
@@ -654,6 +654,32 @@ symmetric_mat6s!(SymmetricMat6 => SymmetricMat3, Mat3, Vec3, f32);
 
 #[cfg(feature = "f64")]
 symmetric_mat6s!(SymmetricDMat6 => SymmetricDMat3, DMat3, DVec3, f64);
+
+impl SymmetricMat6 {
+    /// Returns the double precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_dmat6(&self) -> SymmetricDMat6 {
+        SymmetricDMat6 {
+            a: self.a.as_symmetric_dmat3(),
+            b: self.b.as_dmat3(),
+            d: self.d.as_symmetric_dmat3(),
+        }
+    }
+}
+
+impl SymmetricDMat6 {
+    /// Returns the single precision version of `self`.
+    #[inline]
+    #[must_use]
+    pub fn as_symmetric_mat6(&self) -> SymmetricMat6 {
+        SymmetricMat6 {
+            a: self.a.as_symmetric_mat3(),
+            b: self.b.as_mat3(),
+            d: self.d.as_symmetric_mat3(),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
