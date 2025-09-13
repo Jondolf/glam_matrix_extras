@@ -283,27 +283,27 @@ mod test {
         // Generate random symmetric matrices and verify that the eigen decomposition is correct.
         for _ in 0..10_000 {
             let eigenvalues = Vec3::new(
-                rng.gen_range(0.1..100.0),
-                rng.gen_range(0.1..100.0),
-                rng.gen_range(0.1..100.0),
+                rng.random_range(0.1..100.0),
+                rng.random_range(0.1..100.0),
+                rng.random_range(0.1..100.0),
             );
             let eigenvectors = Mat3::from_cols(
                 Vec3::new(
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
                 )
                 .normalize(),
                 Vec3::new(
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
                 )
                 .normalize(),
                 Vec3::new(
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
                 )
                 .normalize(),
             );
