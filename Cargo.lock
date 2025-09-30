@@ -257,13 +257,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "glam_matrix_extensions"
+name = "glam_matrix_extras"
 version = "0.1.0"
 dependencies = [
  "approx",
  "bevy_reflect",
  "glam",
- "glam_matrix_extensions",
+ "glam_matrix_extras",
  "libm",
  "rand",
  "rand_chacha",

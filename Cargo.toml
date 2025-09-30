@@ -1,12 +1,12 @@
 [package]
-name = "glam_matrix_extensions"
+name = "glam_matrix_extras"
 version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["Joona Aalto <jondolf.dev@gmail.com>"]
 description = "Matrix types and utilities for Glam."
-documentation = "https://docs.rs/glam_matrix_extensions"
-repository = "https://github.com/Jondolf/glam_matrix_extensions"
+documentation = "https://docs.rs/glam_matrix_extras"
+repository = "https://github.com/Jondolf/glam_matrix_extras"
 readme = "README.md"
 keywords = ["gamedev", "math", "matrix"]
 categories = ["game-development", "science", "simulation"]
@@ -52,7 +52,7 @@ serde = { version = "1.0", optional = true, features = ["serde_derive"] }
 
 [dev-dependencies]
 # Enable some features for testing.
-glam_matrix_extensions = { path = "./", features = ["f32", "f64", "approx"] }
+glam_matrix_extras = { path = "./", features = ["f32", "f64", "approx"] }
 
 # Random number generation
 rand = { version = "0.9", default-features = false }
