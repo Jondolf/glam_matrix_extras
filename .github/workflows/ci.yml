@@ -55,6 +55,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
       - name: Run cargo clippy
