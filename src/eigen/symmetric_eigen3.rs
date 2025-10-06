@@ -86,8 +86,10 @@ impl SymmetricEigen3 {
 
         let p1 = mat.m01.squared() + mat.m02.squared() + mat.m12.squared();
 
-        if p1 == 0.0 {
-            // The matrix is diagonal.
+        // Check if the matrix is nearly diagonal.
+        // Without this check, the algorithm can produce NaN values.
+        // TODO: What is the ideal threshold here?
+        if p1 < 1e-10 {
             return (Vec3::new(mat.m00, mat.m11, mat.m22), true);
         }
 
@@ -95,6 +97,7 @@ impl SymmetricEigen3 {
         let p2 =
             (mat.m00 - q).squared() + (mat.m11 - q).squared() + (mat.m22 - q).squared() + 2.0 * p1;
         let p = ops::sqrt(p2 / 6.0);
+
         let mat_b = 1.0 / p * (mat - q * Mat3::IDENTITY);
         let r = mat_b.determinant() / 2.0;
 
@@ -324,5 +327,36 @@ mod test {
             //       Larger eigenvalues can lead to larger absolute error.
             assert_relative_eq!(mat1, mat2, epsilon = 1e-2);
         }
+    }
+
+    #[test]
+    fn eigen_pathological() {
+        // The algorithm sometimes produces NaN eigenvalues and eigenvectors for matrices
+        // that are already nearly diagonal. There is a diagonality check that should avoid this.
+        let mat = SymmetricMat3 {
+            m00: 5.3333335,
+            m01: 3.4465857e-20,
+            m02: 0.0,
+            m11: 5.3333335,
+            m12: 0.0,
+            m22: 5.3333335,
+        };
+        let eigen = SymmetricEigen3::new(mat);
+        assert_relative_eq!(eigen.eigenvalues, Vec3::splat(5.3333335), epsilon = 1e-6);
+        assert_relative_eq!(
+            eigen.eigenvectors.x_axis.abs(),
+            Vec3::new(1.0, 0.0, 0.0),
+            epsilon = 1e-6
+        );
+        assert_relative_eq!(
+            eigen.eigenvectors.y_axis.abs(),
+            Vec3::new(0.0, 1.0, 0.0),
+            epsilon = 1e-6
+        );
+        assert_relative_eq!(
+            eigen.eigenvectors.z_axis.abs(),
+            Vec3::new(0.0, 0.0, 1.0),
+            epsilon = 1e-6
+        );
     }
 }
