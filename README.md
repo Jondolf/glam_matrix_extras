@@ -1,5 +1,10 @@
 # `glam_matrix_extras`
 
+[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/Jondolf/glam_matrix_extras#license)
+[![ci](https://github.com/Jondolf/glam_matrix_extras/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jondolf/glam_matrix_extras/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/glam_matrix_extras?label=crates.io)](https://crates.io/crates/glam_matrix_extras)
+[![docs.rs](https://img.shields.io/docsrs/glam_matrix_extras?label=docs.rs)](https://docs.rs/glam_matrix_extras)
+
 Matrix types and utilities for [`glam`].
 
 [`glam`]: https://docs.rs/glam/latest/glam/
