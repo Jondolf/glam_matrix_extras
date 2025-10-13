@@ -9,14 +9,18 @@ use glam::{Mat2, Mat3, Vec2, Vec3};
 use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::ReflectDefault};
 
 #[cfg(feature = "f64")]
-use crate::matrices::{DMat23, SymmetricDMat2};
+use crate::rectangular::DMat32;
 #[cfg(feature = "f32")]
-use crate::matrices::{Mat23, SymmetricMat2};
+use crate::rectangular::Mat32;
+#[cfg(feature = "f64")]
+use crate::symmetric::SymmetricDMat3;
+#[cfg(feature = "f32")]
+use crate::symmetric::SymmetricMat3;
 
-macro_rules! mat32s {
-    ($($n:ident => $m23t:ident, $symmetricm2t:ident, $m2t:ident, $m3t:ident, $v2t:ident, $v3t:ident, $t:ident),+) => {
+macro_rules! mat23s {
+    ($($n:ident => $m32t:ident, $symmetricm3t:ident, $m2t:ident, $m3t:ident, $v2t:ident, $v3t:ident, $t:ident),+) => {
         $(
-        /// A 3x2 column-major matrix.
+        /// A 2x3 column-major matrix.
         #[derive(Clone, Copy, PartialEq)]
         #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
         #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -26,32 +30,35 @@ macro_rules! mat32s {
         )]
         pub struct $n {
             /// The first column of the matrix.
-            pub x_axis: $v3t,
+            pub x_axis: $v2t,
             /// The second column of the matrix.
-            pub y_axis: $v3t,
+            pub y_axis: $v2t,
+            /// The third column of the matrix.
+            pub z_axis: $v2t,
         }
 
         impl $n {
-            /// A 3x2 matrix with all elements set to `0.0`.
-            pub const ZERO: Self = Self::from_cols($v3t::ZERO, $v3t::ZERO);
+            /// A 2x3 matrix with all elements set to `0.0`.
+            pub const ZERO: Self = Self::from_cols($v2t::ZERO, $v2t::ZERO, $v2t::ZERO);
 
             /// All NaNs.
-            pub const NAN: Self = Self::from_cols($v3t::NAN, $v3t::NAN);
+            pub const NAN: Self = Self::from_cols($v2t::NAN, $v2t::NAN, $v2t::NAN);
 
-            /// Creates a 3x2 matrix from two column vectors.
+            /// Creates a 2x3 matrix from two column vectors.
             #[inline(always)]
             #[must_use]
-            pub const fn from_cols(x_axis: $v3t, y_axis: $v3t) -> Self {
-                Self { x_axis, y_axis }
+            pub const fn from_cols(x_axis: $v2t, y_axis: $v2t, z_axis: $v2t) -> Self {
+                Self { x_axis, y_axis, z_axis }
             }
 
-            /// Creates a 3x2 matrix from an array stored in column major order.
+            /// Creates a 2x3 matrix from an array stored in column major order.
             #[inline]
             #[must_use]
             pub const fn from_cols_array(m: &[$t; 6]) -> Self {
                 Self::from_cols(
-                    $v3t::new(m[0], m[1], m[2]),
-                    $v3t::new(m[3], m[4], m[5]),
+                    $v2t::new(m[0], m[1]),
+                    $v2t::new(m[2], m[3]),
+                    $v2t::new(m[4], m[5]),
                 )
             }
 
@@ -62,28 +69,36 @@ macro_rules! mat32s {
                 [
                     self.x_axis.x,
                     self.x_axis.y,
-                    self.x_axis.z,
                     self.y_axis.x,
                     self.y_axis.y,
-                    self.y_axis.z,
+                    self.z_axis.x,
+                    self.z_axis.y,
                 ]
             }
 
-            /// Creates a 3x2 matrix from a 2D array stored in column major order.
+            /// Creates a 2x3 matrix from a 2D array stored in column major order.
             #[inline]
             #[must_use]
-            pub const fn from_cols_array_2d(m: &[[$t; 3]; 2]) -> Self {
-                Self::from_cols($v3t::from_array(m[0]), $v3t::from_array(m[1]))
+            pub const fn from_cols_array_2d(m: &[[$t; 2]; 3]) -> Self {
+                Self::from_cols(
+                    $v2t::from_array(m[0]),
+                    $v2t::from_array(m[1]),
+                    $v2t::from_array(m[2]),
+                )
             }
 
             /// Creates a 2D array storing data in column major order.
             #[inline]
             #[must_use]
-            pub const fn to_cols_array_2d(&self) -> [[$t; 3]; 2] {
-                [self.x_axis.to_array(), self.y_axis.to_array()]
+            pub const fn to_cols_array_2d(&self) -> [[$t; 2]; 3] {
+                [
+                    self.x_axis.to_array(),
+                    self.y_axis.to_array(),
+                    self.z_axis.to_array(),
+                ]
             }
 
-            /// Creates a 3x2 matrix from the first 6 values in `slice`.
+            /// Creates a 2x3 matrix from the first 6 values in `slice`.
             ///
             /// # Panics
             ///
@@ -92,17 +107,21 @@ macro_rules! mat32s {
             #[must_use]
             pub const fn from_cols_slice(slice: &[$t]) -> Self {
                 Self::from_cols(
-                    $v3t::new(slice[0], slice[1], slice[2]),
-                    $v3t::new(slice[3], slice[4], slice[5]),
+                    $v2t::new(slice[0], slice[1]),
+                    $v2t::new(slice[2], slice[3]),
+                    $v2t::new(slice[4], slice[5]),
                 )
             }
 
-            /// Creates a 3x2 matrix from three row vectors.
-            pub const fn from_rows(row0: $v2t, row1: $v2t, row2: $v2t) -> Self {
-                Self::from_cols(
-                    $v3t::new(row0.x, row1.x, row2.x),
-                    $v3t::new(row0.y, row1.y, row2.y),
-                )
+            /// Creates a 2x3 matrix from two row vectors.
+            #[inline(always)]
+            #[must_use]
+            pub const fn from_rows(row0: $v3t, row1: $v3t) -> Self {
+                Self {
+                    x_axis: $v2t::new(row0.x, row1.x),
+                    y_axis: $v2t::new(row0.y, row1.y),
+                    z_axis: $v2t::new(row0.z, row1.z),
+                }
             }
 
             /// Creates a 2x3 matrix from an array stored in row major order.
@@ -110,9 +129,8 @@ macro_rules! mat32s {
             #[must_use]
             pub const fn from_rows_array(m: &[$t; 6]) -> Self {
                 Self::from_rows(
-                    $v2t::new(m[0], m[1]),
-                    $v2t::new(m[2], m[3]),
-                    $v2t::new(m[4], m[5]),
+                    $v3t::new(m[0], m[1], m[2]),
+                    $v3t::new(m[3], m[4], m[5]),
                 )
             }
 
@@ -123,32 +141,30 @@ macro_rules! mat32s {
                 [
                     self.x_axis.x,
                     self.y_axis.x,
+                    self.z_axis.x,
                     self.x_axis.y,
                     self.y_axis.y,
-                    self.x_axis.z,
-                    self.y_axis.z,
+                    self.z_axis.y,
                 ]
             }
 
             /// Creates a 2x3 matrix from a 2D array stored in row major order.
             #[inline]
             #[must_use]
-            pub const fn from_rows_array_2d(m: &[[$t; 2]; 3]) -> Self {
+            pub const fn from_rows_array_2d(m: &[[$t; 3]; 2]) -> Self {
                 Self::from_rows(
-                    $v2t::new(m[0][0], m[0][1]),
-                    $v2t::new(m[1][0], m[1][1]),
-                    $v2t::new(m[2][0], m[2][1]),
+                    $v3t::from_array(m[0]),
+                    $v3t::from_array(m[1]),
                 )
             }
 
             /// Creates a 2D array storing data in row major order.
             #[inline]
             #[must_use]
-            pub const fn to_rows_array_2d(&self) -> [[$t; 2]; 3] {
+            pub const fn to_rows_array_2d(&self) -> [[$t; 3]; 2] {
                 [
-                    [self.x_axis.x, self.y_axis.x],
-                    [self.x_axis.y, self.y_axis.y],
-                    [self.x_axis.z, self.y_axis.z],
+                    [self.x_axis.x, self.y_axis.x, self.z_axis.x],
+                    [self.x_axis.y, self.y_axis.y, self.z_axis.y],
                 ]
             }
 
@@ -161,19 +177,19 @@ macro_rules! mat32s {
             #[must_use]
             pub const fn from_rows_slice(slice: &[$t]) -> Self {
                 Self::from_rows(
-                    $v2t::new(slice[0], slice[1]),
-                    $v2t::new(slice[2], slice[3]),
-                    $v2t::new(slice[4], slice[5]),
+                    $v3t::new(slice[0], slice[1], slice[2]),
+                    $v3t::new(slice[3], slice[4], slice[5]),
                 )
             }
 
-            /// Creates a new 3x2 matrix from the outer product `a * b^T`.
+            /// Creates a new 2x3 matrix from the outer product `a * b^T`.
             #[inline(always)]
             #[must_use]
-            pub fn from_outer_product(a: $v3t, b: $v2t) -> Self {
+            pub fn from_outer_product(a: $v2t, b: $v3t) -> Self {
                 Self::from_cols(
-                    $v3t::new(a.x * b.x, a.y * b.x, a.z * b.x),
-                    $v3t::new(a.x * b.y, a.y * b.y, a.z * b.y),
+                    $v2t::new(a.x * b.x, a.y * b.x),
+                    $v2t::new(a.x * b.y, a.y * b.y),
+                    $v2t::new(a.x * b.z, a.y * b.z),
                 )
             }
 
@@ -181,13 +197,14 @@ macro_rules! mat32s {
             ///
             /// # Panics
             ///
-            /// Panics if `index` is greater than 1.
+            /// Panics if `index` is greater than 2.
             #[inline]
             #[must_use]
-            pub const fn col(&self, index: usize) -> $v3t {
+            pub const fn col(&self, index: usize) -> $v2t {
                 match index {
                     0 => self.x_axis,
                     1 => self.y_axis,
+                    2 => self.z_axis,
                     _ => panic!("index out of bounds"),
                 }
             }
@@ -196,14 +213,13 @@ macro_rules! mat32s {
             ///
             /// # Panics
             ///
-            /// Panics if `index` is greater than 2.
+            /// Panics if `index` is greater than 1.
             #[inline]
             #[must_use]
-            pub const fn row(&self, index: usize) -> $v2t {
+            pub const fn row(&self, index: usize) -> $v3t {
                 match index {
-                    0 => $v2t::new(self.x_axis.x, self.y_axis.x),
-                    1 => $v2t::new(self.x_axis.y, self.y_axis.y),
-                    2 => $v2t::new(self.x_axis.z, self.y_axis.z),
+                    0 => $v3t::new(self.x_axis.x, self.y_axis.x, self.z_axis.x),
+                    1 => $v3t::new(self.x_axis.y, self.y_axis.y, self.z_axis.y),
                     _ => panic!("index out of bounds"),
                 }
             }
@@ -213,81 +229,73 @@ macro_rules! mat32s {
             #[inline]
             #[must_use]
             pub fn is_finite(&self) -> bool {
-                self.x_axis.is_finite() && self.y_axis.is_finite()
+                self.x_axis.is_finite() && self.y_axis.is_finite() && self.z_axis.is_finite()
             }
 
             /// Returns `true` if any elements are `NaN`.
             #[inline]
             #[must_use]
             pub fn is_nan(&self) -> bool {
-                self.x_axis.is_nan() || self.y_axis.is_nan()
+                self.x_axis.is_nan() || self.y_axis.is_nan() || self.z_axis.is_nan()
             }
 
             /// Returns the transpose of `self`.
             #[inline]
             #[must_use]
-            pub fn transpose(&self) -> $m23t {
-                $m23t::from_rows(self.x_axis, self.y_axis)
+            pub fn transpose(&self) -> $m32t {
+                $m32t::from_rows(self.x_axis, self.y_axis, self.z_axis)
             }
 
             /// Takes the absolute value of each element in `self`.
             #[inline]
             #[must_use]
             pub fn abs(&self) -> Self {
-                Self::from_cols(self.x_axis.abs(), self.y_axis.abs())
+                Self::from_cols(self.x_axis.abs(), self.y_axis.abs(), self.z_axis.abs())
             }
 
-            /// Transforms a 2D vector into a 3D vector.
+            /// Transforms a 3D vector into a 2D vector.
             #[inline]
             #[must_use]
-            pub fn mul_vec2(&self, rhs: $v2t) -> $v3t {
-                $v3t::new(
+            pub fn mul_vec3(&self, rhs: $v3t) -> $v2t {
+                $v2t::new(
                     rhs.dot(self.row(0)),
                     rhs.dot(self.row(1)),
-                    rhs.dot(self.row(2)),
                 )
             }
 
-            /// Multiplies `self` by a 2x2 matrix, `self * rhs`.
+            /// Multiplies `self` by a 3x3 matrix, `self * rhs`.
             #[inline]
             #[must_use]
-            pub fn mul_mat2(&self, rhs: &$m2t) -> Self {
+            pub fn mul_mat3(&self, rhs: &$m3t) -> Self {
                 self.mul(rhs)
             }
 
-            /// Multiplies `self` by a symmetric 2x2 matrix, `self * rhs`.
+            /// Multiplies `self` by a symmetric 3x3 matrix, `self * rhs`.
             #[inline]
             #[must_use]
-            pub fn mul_symmetric_mat2(&self, rhs: &$symmetricm2t) -> Self {
+            pub fn mul_symmetric_mat3(&self, rhs: &$symmetricm3t) -> Self {
                 self.mul(rhs)
             }
 
-            /// Multiplies `self` by a 2x3 matrix, `self * rhs`.
+            /// Multiplies `self` by a 3x2 matrix, `self * rhs`.
             #[inline]
             #[must_use]
-            pub fn mul_mat23(&self, rhs: &$m23t) -> $m3t {
+            pub fn mul_mat32(&self, rhs: &$m32t) -> $m2t {
                 self.mul(rhs)
             }
 
             /// Multiplies `self` by another matrix that is treated as transposed, `self * rhs.transpose()`.
             #[inline]
             #[must_use]
-            pub fn mul_transposed_mat32(&self, rhs: &Self) -> $m3t {
-                $m3t::from_cols(
-                    $v3t::new(
+            pub fn mul_transposed_mat23(&self, rhs: &Self) -> $m2t {
+                $m2t::from_cols(
+                    $v2t::new(
                         self.row(0).dot(rhs.row(0)),
                         self.row(1).dot(rhs.row(0)),
-                        self.row(2).dot(rhs.row(0)),
                     ),
-                    $v3t::new(
+                    $v2t::new(
                         self.row(0).dot(rhs.row(1)),
                         self.row(1).dot(rhs.row(1)),
-                        self.row(2).dot(rhs.row(1)),
-                    ),
-                    $v3t::new(
-                        self.row(0).dot(rhs.row(2)),
-                        self.row(1).dot(rhs.row(2)),
-                        self.row(2).dot(rhs.row(2)),
                     ),
                 )
             }
@@ -306,18 +314,19 @@ macro_rules! mat32s {
                 self.sub(rhs)
             }
 
-            /// Multiplies a 3x2 matrix by a scalar.
+            /// Multiplies a 2x3 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn mul_scalar(&self, rhs: $t) -> Self {
-                Self::from_cols(self.x_axis * rhs, self.y_axis * rhs)
+                Self::from_cols(self.x_axis * rhs, self.y_axis * rhs, self.z_axis * rhs)
             }
 
-            /// Divides a 3x2 matrix by a scalar.
+            /// Divides a 2x3 matrix by a scalar.
             #[inline]
             #[must_use]
             pub fn div_scalar(&self, rhs: $t) -> Self {
-                Self::from_cols(self.x_axis / rhs, self.y_axis / rhs)
+                let inv_rhs = rhs.recip();
+                Self::from_cols(self.x_axis * inv_rhs, self.y_axis * inv_rhs, self.z_axis * inv_rhs)
             }
         }
 
@@ -332,7 +341,11 @@ macro_rules! mat32s {
             type Output = Self;
             #[inline]
             fn add(self, rhs: Self) -> Self::Output {
-                Self::from_cols(self.x_axis + rhs.x_axis, self.y_axis + rhs.y_axis)
+                Self::from_cols(
+                    self.x_axis + rhs.x_axis,
+                    self.y_axis + rhs.y_axis,
+                    self.z_axis + rhs.z_axis,
+                )
             }
         }
 
@@ -378,7 +391,11 @@ macro_rules! mat32s {
             type Output = Self;
             #[inline]
             fn sub(self, rhs: Self) -> Self::Output {
-                Self::from_cols(self.x_axis - rhs.x_axis, self.y_axis - rhs.y_axis)
+                Self::from_cols(
+                    self.x_axis - rhs.x_axis,
+                    self.y_axis - rhs.y_axis,
+                    self.z_axis - rhs.z_axis,
+                )
             }
         }
 
@@ -424,7 +441,7 @@ macro_rules! mat32s {
             type Output = Self;
             #[inline]
             fn neg(self) -> Self::Output {
-                Self::from_cols(-self.x_axis, -self.y_axis)
+                Self::from_cols(-self.x_axis, -self.y_axis, -self.z_axis)
             }
         }
 
@@ -436,168 +453,161 @@ macro_rules! mat32s {
             }
         }
 
-        impl Mul<$m2t> for $n {
+        impl Mul<$m3t> for $n {
             type Output = Self;
             #[inline]
-            fn mul(self, rhs: $m2t) -> Self::Output {
-                Self::from_cols(
+            fn mul(self, rhs: $m3t) -> Self::Output {
+                Self::from_rows(
                     $v3t::new(
                         self.row(0).dot(rhs.x_axis),
-                        self.row(1).dot(rhs.x_axis),
-                        self.row(2).dot(rhs.x_axis),
+                        self.row(0).dot(rhs.y_axis),
+                        self.row(0).dot(rhs.z_axis),
                     ),
                     $v3t::new(
-                        self.row(0).dot(rhs.y_axis),
+                        self.row(1).dot(rhs.x_axis),
                         self.row(1).dot(rhs.y_axis),
-                        self.row(2).dot(rhs.y_axis),
-                    )
+                        self.row(1).dot(rhs.z_axis),
+                    ),
                 )
             }
         }
 
-        impl Mul<&$m2t> for $n {
+        impl Mul<&$m3t> for $n {
             type Output = Self;
             #[inline]
-            fn mul(self, rhs: &$m2t) -> Self::Output {
+            fn mul(self, rhs: &$m3t) -> Self::Output {
                 self.mul(*rhs)
             }
         }
 
-        impl Mul<$m2t> for &$n {
+        impl Mul<$m3t> for &$n {
             type Output = $n;
             #[inline]
-            fn mul(self, rhs: $m2t) -> Self::Output {
+            fn mul(self, rhs: $m3t) -> Self::Output {
                 (*self).mul(rhs)
             }
         }
 
-        impl Mul<&$m2t> for &$n {
+        impl Mul<&$m3t> for &$n {
             type Output = $n;
             #[inline]
-            fn mul(self, rhs: &$m2t) -> Self::Output {
+            fn mul(self, rhs: &$m3t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
 
-        impl Mul<$symmetricm2t> for $n {
+        impl Mul<$symmetricm3t> for $n {
             type Output = Self;
             #[inline]
-            fn mul(self, rhs: $symmetricm2t) -> Self::Output {
-                Self::from_cols(
+            fn mul(self, rhs: $symmetricm3t) -> Self::Output {
+                Self::from_rows(
                     $v3t::new(
                         self.row(0).dot(rhs.col(0)),
-                        self.row(1).dot(rhs.col(0)),
-                        self.row(2).dot(rhs.col(0)),
+                        self.row(0).dot(rhs.col(1)),
+                        self.row(0).dot(rhs.col(2)),
                     ),
                     $v3t::new(
-                        self.row(0).dot(rhs.col(1)),
+                        self.row(1).dot(rhs.col(0)),
                         self.row(1).dot(rhs.col(1)),
-                        self.row(2).dot(rhs.col(1)),
+                        self.row(1).dot(rhs.col(2)),
                     ),
                 )
             }
         }
 
-        impl Mul<&$symmetricm2t> for $n {
+        impl Mul<&$symmetricm3t> for $n {
             type Output = Self;
             #[inline]
-            fn mul(self, rhs: &$symmetricm2t) -> Self::Output {
+            fn mul(self, rhs: &$symmetricm3t) -> Self::Output {
                 self.mul(*rhs)
             }
         }
 
-        impl Mul<$symmetricm2t> for &$n {
+        impl Mul<$symmetricm3t> for &$n {
             type Output = $n;
             #[inline]
-            fn mul(self, rhs: $symmetricm2t) -> Self::Output {
+            fn mul(self, rhs: $symmetricm3t) -> Self::Output {
                 (*self).mul(rhs)
             }
         }
 
-        impl Mul<&$symmetricm2t> for &$n {
+        impl Mul<&$symmetricm3t> for &$n {
             type Output = $n;
             #[inline]
-            fn mul(self, rhs: &$symmetricm2t) -> Self::Output {
+            fn mul(self, rhs: &$symmetricm3t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
 
-        impl Mul<$m23t> for $n {
-            type Output = $m3t;
+        impl Mul<$m32t> for $n {
+            type Output = $m2t;
             #[inline]
-            fn mul(self, rhs: $m23t) -> Self::Output {
-                $m3t::from_cols(
-                    $v3t::new(
+            fn mul(self, rhs: $m32t) -> Self::Output {
+                $m2t::from_cols(
+                    $v2t::new(
                         self.row(0).dot(rhs.x_axis),
                         self.row(1).dot(rhs.x_axis),
-                        self.row(2).dot(rhs.x_axis),
                     ),
-                    $v3t::new(
+                    $v2t::new(
                         self.row(0).dot(rhs.y_axis),
                         self.row(1).dot(rhs.y_axis),
-                        self.row(2).dot(rhs.y_axis),
-                    ),
-                    $v3t::new(
-                        self.row(0).dot(rhs.z_axis),
-                        self.row(1).dot(rhs.z_axis),
-                        self.row(2).dot(rhs.z_axis),
                     ),
                 )
             }
         }
 
-        impl Mul<&$m23t> for $n {
-            type Output = $m3t;
+        impl Mul<&$m32t> for $n {
+            type Output = $m2t;
             #[inline]
-            fn mul(self, rhs: &$m23t) -> Self::Output {
+            fn mul(self, rhs: &$m32t) -> Self::Output {
                 self.mul(*rhs)
             }
         }
 
-        impl Mul<$m23t> for &$n {
-            type Output = $m3t;
+        impl Mul<$m32t> for &$n {
+            type Output = $m2t;
             #[inline]
-            fn mul(self, rhs: $m23t) -> Self::Output {
+            fn mul(self, rhs: $m32t) -> Self::Output {
                 (*self).mul(rhs)
             }
         }
 
-        impl Mul<&$m23t> for &$n {
-            type Output = $m3t;
+        impl Mul<&$m32t> for &$n {
+            type Output = $m2t;
             #[inline]
-            fn mul(self, rhs: &$m23t) -> Self::Output {
+            fn mul(self, rhs: &$m32t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
 
-        impl Mul<$v2t> for $n {
-            type Output = $v3t;
+        impl Mul<$v3t> for $n {
+            type Output = $v2t;
             #[inline]
-            fn mul(self, rhs: $v2t) -> Self::Output {
-                self.mul_vec2(rhs)
+            fn mul(self, rhs: $v3t) -> Self::Output {
+                self.mul_vec3(rhs)
             }
         }
 
-        impl Mul<&$v2t> for $n {
-            type Output = $v3t;
+        impl Mul<&$v3t> for $n {
+            type Output = $v2t;
             #[inline]
-            fn mul(self, rhs: &$v2t) -> Self::Output {
+            fn mul(self, rhs: &$v3t) -> Self::Output {
                 self.mul(*rhs)
             }
         }
 
-        impl Mul<$v2t> for &$n {
-            type Output = $v3t;
+        impl Mul<$v3t> for &$n {
+            type Output = $v2t;
             #[inline]
-            fn mul(self, rhs: $v2t) -> Self::Output {
+            fn mul(self, rhs: $v3t) -> Self::Output {
                 (*self).mul(rhs)
             }
         }
 
-        impl Mul<&$v2t> for &$n {
-            type Output = $v3t;
+        impl Mul<&$v3t> for &$n {
+            type Output = $v2t;
             #[inline]
-            fn mul(self, rhs: &$v2t) -> Self::Output {
+            fn mul(self, rhs: &$v3t) -> Self::Output {
                 (*self).mul(*rhs)
             }
         }
@@ -838,16 +848,18 @@ macro_rules! mat32s {
                 if let Some(p) = f.precision() {
                     write!(
                         f,
-                        "[[{:.*}, {:.*}, {:.*}], [{:.*}, {:.*}, {:.*}]]",
-                        p, self.x_axis.x, p, self.x_axis.y, p, self.x_axis.z,
-                        p, self.y_axis.x, p, self.y_axis.y, p, self.y_axis.z
+                        "[[{:.*}, {:.*}], [{:.*}, {:.*}], [{:.*}, {:.*}]]",
+                        p, self.x_axis.x, p, self.x_axis.y,
+                        p, self.y_axis.x, p, self.y_axis.y,
+                        p, self.z_axis.x, p, self.z_axis.y,
                     )
                 } else {
                     write!(
                         f,
-                        "[[{}, {}, {}], [{}, {}, {}]]",
-                        self.x_axis.x, self.x_axis.y, self.x_axis.z,
-                        self.y_axis.x, self.y_axis.y, self.y_axis.z
+                        "[[{}, {}], [{}, {}], [{}, {}]]",
+                        self.x_axis.x, self.x_axis.y,
+                        self.y_axis.x, self.y_axis.y,
+                        self.z_axis.x, self.z_axis.y,
                     )
                 }
             }
@@ -857,33 +869,35 @@ macro_rules! mat32s {
 }
 
 #[cfg(feature = "f32")]
-mat32s!(Mat32 => Mat23, SymmetricMat2, Mat2, Mat3, Vec2, Vec3, f32);
+mat23s!(Mat23 => Mat32, SymmetricMat3, Mat2, Mat3, Vec2, Vec3, f32);
 
 #[cfg(feature = "f64")]
-mat32s!(DMat32 => DMat23, SymmetricDMat2, DMat2, DMat3, DVec2, DVec3, f64);
+mat23s!(DMat23 => DMat32, SymmetricDMat3, DMat2, DMat3, DVec2, DVec3, f64);
 
 #[cfg(all(feature = "f32", feature = "f64"))]
-impl Mat32 {
+impl Mat23 {
     /// Returns the double precision version of `self`.
     #[inline]
     #[must_use]
-    pub fn as_dmat32(&self) -> DMat32 {
-        DMat32 {
-            x_axis: self.x_axis.as_dvec3(),
-            y_axis: self.y_axis.as_dvec3(),
+    pub fn as_dmat23(&self) -> DMat23 {
+        DMat23 {
+            x_axis: self.x_axis.as_dvec2(),
+            y_axis: self.y_axis.as_dvec2(),
+            z_axis: self.z_axis.as_dvec2(),
         }
     }
 }
 
 #[cfg(all(feature = "f32", feature = "f64"))]
-impl DMat32 {
+impl DMat23 {
     /// Returns the single precision version of `self`.
     #[inline]
     #[must_use]
-    pub fn as_mat32(&self) -> Mat32 {
-        Mat32 {
-            x_axis: self.x_axis.as_vec3(),
-            y_axis: self.y_axis.as_vec3(),
+    pub fn as_mat23(&self) -> Mat23 {
+        Mat23 {
+            x_axis: self.x_axis.as_vec2(),
+            y_axis: self.y_axis.as_vec2(),
+            z_axis: self.z_axis.as_vec2(),
         }
     }
 }
@@ -895,55 +909,51 @@ mod tests {
     use crate::{Mat23, Mat32};
 
     #[test]
-    fn mat32_mul_vec2() {
-        let mat = Mat32::from_cols(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
-        let vec = vec2(1.0, 2.0);
+    fn mat23_mul_vec3() {
+        let mat = Mat23::from_rows(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
+        let vec = vec3(1.0, 2.0, 3.0);
 
-        let expected = vec3(18.0, 19.0, 10.0);
-        let result = mat.mul_vec2(vec);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn mat32_mul_mat2() {
-        let mat32 = Mat32::from_cols(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
-        let mat2 = Mat2::from_cols(vec2(2.0, 5.0), vec2(1.0, 8.0));
-
-        let expected = Mat32::from_cols(vec3(43.0, 47.0, 22.0), vec3(60.0, 73.0, 22.0));
-        let result = mat32.mul_mat2(&mat2);
+        let expected = vec2(24.0, 31.0);
+        let result = mat.mul_vec3(vec);
 
         assert_eq!(result, expected);
     }
 
     #[test]
-    fn mat32_mul_mat23() {
-        let mat32 = Mat32::from_cols(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
-        let mat23 = Mat23::from_rows(vec3(2.0, 5.0, 1.0), vec3(8.0, 3.0, 4.0));
-
-        let expected = Mat3::from_cols(
-            vec3(64.0, 74.0, 28.0),
-            vec3(41.0, 32.0, 36.0),
-            vec3(32.0, 37.0, 14.0),
+    fn mat23_mul_mat3() {
+        let mat23 = Mat23::from_rows(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
+        let mat3 = Mat3::from_cols(
+            vec3(2.0, 5.0, 9.0),
+            vec3(1.0, 8.0, 4.0),
+            vec3(6.0, 3.0, 7.0),
         );
-        let result = mat32.mul_mat23(&mat23);
+
+        let expected = Mat23::from_rows(vec3(67.0, 36.0, 69.0), vec3(77.0, 87.0, 83.0));
+        let result = mat23.mul_mat3(&mat3);
 
         assert_eq!(result, expected);
     }
 
     #[test]
-    fn mat32_mul_transposed_mat32() {
-        let mat32_a = Mat32::from_cols(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
-        let mat32_b = Mat32::from_cols(vec3(2.0, 5.0, 1.0), vec3(8.0, 3.0, 4.0));
+    fn mat23_mul_mat32() {
+        let mat23 = Mat23::from_rows(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
+        let mat32 = Mat32::from_cols(vec3(2.0, 5.0, 1.0), vec3(8.0, 3.0, 4.0));
 
-        let expected = Mat3::from_cols(
-            vec3(64.0, 74.0, 28.0),
-            vec3(41.0, 32.0, 36.0),
-            vec3(32.0, 37.0, 14.0),
-        );
-        let result = mat32_a.mul_transposed_mat32(&mat32_b);
+        let expected = Mat2::from_cols(vec2(19.0, 61.0), vec2(59.0, 91.0));
+        let result = mat23.mul_mat32(&mat32);
 
         assert_eq!(result, expected);
-        assert_eq!(result, mat32_a * mat32_b.transpose());
+    }
+
+    #[test]
+    fn mat23_mul_transposed_mat23() {
+        let mat23_a = Mat23::from_rows(vec3(4.0, 1.0, 6.0), vec3(7.0, 9.0, 2.0));
+        let mat23_b = Mat23::from_rows(vec3(2.0, 5.0, 1.0), vec3(8.0, 3.0, 4.0));
+
+        let expected = Mat2::from_cols(vec2(19.0, 61.0), vec2(59.0, 91.0));
+        let result = mat23_a.mul_transposed_mat23(&mat23_b);
+
+        assert_eq!(result, expected);
+        assert_eq!(result, mat23_a * mat23_b.transpose());
     }
 }

@@ -10,9 +10,9 @@ use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize, std_traits::Re
 use crate::{MatConversionError, SquareMatExt, ops::FloatAbs};
 
 #[cfg(feature = "f64")]
-use crate::matrices::{DMat23, DMat32};
+use crate::rectangular::{DMat23, DMat32};
 #[cfg(feature = "f32")]
-use crate::matrices::{Mat23, Mat32};
+use crate::rectangular::{Mat23, Mat32};
 
 /// An extension trait for 3x3 matrices.
 pub trait Mat3Ext {
