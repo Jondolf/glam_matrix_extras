@@ -17,8 +17,14 @@ Matrix types and utilities for [`glam`].
   - [x] Symmetric 5x5 matrices: `SymmetricMat5`, `SymmetricDMat5`
   - [x] Symmetric 6x6 matrices: `SymmetricMat6`, `SymmetricDMat6`
 - Eigen decompositions of symmetric matrices
-  - [x] 2D: `SymmetricEigen2`
-  - [x] 3D: `SymmetricEigen3`
+  - [x] 2x2: `SymmetricEigen2`
+  - [x] 3x3: `SymmetricEigen3`
+
+## Supported Glam Versions
+
+| `glam`    | `glam_matrix_extras`  |
+| --------- | --------------------- |
+| 0.30      | 0.1                   |
 
 ## License
 
