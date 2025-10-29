@@ -47,6 +47,10 @@ impl SymmetricEigen3 {
                 core::mem::swap(&mut eigenvalues.y, &mut eigenvalues.z);
                 core::mem::swap(&mut eigenvectors.y_axis, &mut eigenvectors.z_axis);
             }
+            if eigenvalues[0] > eigenvalues[1] {
+                core::mem::swap(&mut eigenvalues.x, &mut eigenvalues.y);
+                core::mem::swap(&mut eigenvectors.x_axis, &mut eigenvectors.y_axis);
+            }
             return Self {
                 eigenvalues,
                 eigenvectors,
