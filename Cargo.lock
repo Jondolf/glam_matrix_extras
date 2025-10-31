@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "glam_matrix_extras"
-version = "0.2.0-dev"
+version = "0.1.1"
 dependencies = [
  "approx",
  "bevy_reflect",
