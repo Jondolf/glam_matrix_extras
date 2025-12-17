@@ -47,7 +47,7 @@ glam = { version = "0.30", default-features = false }
 libm = { version = "0.2", optional = true }
 
 # Reflection
-bevy_reflect = { version = "0.17", optional = true }
+bevy_reflect = { version = "0.18.0-rc", optional = true }
 serde = { version = "1.0", optional = true, features = ["serde_derive"] }
 
 [dev-dependencies]
