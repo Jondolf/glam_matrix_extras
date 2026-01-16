@@ -27,9 +27,10 @@ Matrix types and utilities for [`glam`].
 
 ## Supported Glam Versions
 
-| `glam`    | `glam_matrix_extras`  |
-| --------- | --------------------- |
-| 0.30      | 0.1                   |
+| `glam`    | `bevy_reflect` | `glam_matrix_extras` |
+| --------- | -------------- | -------------------- |
+| 0.30      | 0.18           | 0.2                  |
+| 0.30      | 0.17           | 0.1                  |
 
 ## License
 
