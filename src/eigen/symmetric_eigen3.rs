@@ -240,7 +240,7 @@ mod test {
     use crate::SymmetricMat3;
     use approx::assert_relative_eq;
     use glam::{Mat3, Vec3};
-    use rand::{Rng, SeedableRng};
+    use rand::{RngExt, SeedableRng};
 
     #[test]
     fn eigen_3x3() {
