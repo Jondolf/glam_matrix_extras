@@ -13,24 +13,25 @@ Matrix types and utilities for [`glam`].
 
 - `SquareMatExt` extension trait with useful helpers like `is_symmetric`, `inverse_or_zero`, and `diagonal`
 - Rectangular matrices
-  - [x] 2x3 matrices: `Mat23`, `DMat23`
-  - [x] 3x2 matrices: `Mat32`, `DMat32`
+    - [x] 2x3 matrices: `Mat23`, `DMat23`
+    - [x] 3x2 matrices: `Mat32`, `DMat32`
 - Symmetric matrices
-  - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `SymmetricDMat2`
-  - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `SymmetricDMat3`
-  - [x] Symmetric 4x4 matrices: `SymmetricMat4`, `SymmetricDMat4`
-  - [x] Symmetric 5x5 matrices: `SymmetricMat5`, `SymmetricDMat5`
-  - [x] Symmetric 6x6 matrices: `SymmetricMat6`, `SymmetricDMat6`
+    - [x] Symmetric 2x2 matrices: `SymmetricMat2`, `SymmetricDMat2`
+    - [x] Symmetric 3x3 matrices: `SymmetricMat3`, `SymmetricDMat3`
+    - [x] Symmetric 4x4 matrices: `SymmetricMat4`, `SymmetricDMat4`
+    - [x] Symmetric 5x5 matrices: `SymmetricMat5`, `SymmetricDMat5`
+    - [x] Symmetric 6x6 matrices: `SymmetricMat6`, `SymmetricDMat6`
 - Eigen decompositions of symmetric matrices
-  - [x] 2x2: `SymmetricEigen2`
-  - [x] 3x3: `SymmetricEigen3`
+    - [x] 2x2: `SymmetricEigen2`
+    - [x] 3x3: `SymmetricEigen3`
 
 ## Supported Glam Versions
 
-| `glam`    | `bevy_reflect` | `glam_matrix_extras` |
-| --------- | -------------- | -------------------- |
-| 0.30      | 0.18           | 0.2                  |
-| 0.30      | 0.17           | 0.1                  |
+| `glam` | `bevy_reflect` | `glam_matrix_extras` |
+| ------ | -------------- | -------------------- |
+| 0.32   | 0.19-rc        | main                 |
+| 0.30   | 0.18           | 0.2                  |
+| 0.30   | 0.17           | 0.1                  |
 
 ## License
 
