@@ -1,6 +1,6 @@
 [package]
 name = "glam_matrix_extras"
-version = "0.3.0-dev"
+version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["Joona Aalto <jondolf.dev@gmail.com>"]
