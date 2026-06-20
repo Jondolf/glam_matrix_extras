@@ -29,7 +29,7 @@ Matrix types and utilities for [`glam`].
 
 | `glam` | `bevy_reflect` | `glam_matrix_extras` |
 | ------ | -------------- | -------------------- |
-| 0.32   | 0.19-rc        | main                 |
+| 0.32   | 0.19           | main                 |
 | 0.30   | 0.18           | 0.2                  |
 | 0.30   | 0.17           | 0.1                  |
 
